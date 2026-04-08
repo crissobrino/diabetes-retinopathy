@@ -1,0 +1,27 @@
+first_attempt.ipynb:
+Scores:
+{'AUC_custom': 0.5699909560525469, 'AUC_ft': 0.6980292369871903, 'AUC_custom_half': 0.5966071282929614, 'AUC_ft_half': 0.7078949514721475}
+
+attempt_with_a_b.ipynb:
+Scores:
+{'AUC_custom': 0.544445636678572, 'AUC_ft': 0.7114163230477591, 'AUC_custom_half': 0.5623929532664547, 'AUC_ft_half': 0.691481118995188}
+
+attempt_with_b.ipynb:
+Scores:
+{'AUC_custom': 0.5584765291680079, 'AUC_ft': 0.6914889812018742, 'AUC_custom_half': 0.5660631269880108, 'AUC_ft_half': 0.693438544980018}
+
+attempt_with_c.ipynb:
+Scores:
+{'AUC_custom': 0.5607094133697135, 'AUC_ft': 0.7514242939844976, 'AUC_custom_half': 0.5786640567653536, 'AUC_ft_half': 0.7343405921213604}
+
+second_attempt.ipynb
+Scores:
+{'AUC_custom': 0.7442249030458176, 'AUC_ft': 0.7420788816162607, 'AUC_custom_half': 0.7307111981078216, 'AUC_ft_half': 0.7268167359921702}
+
+LS5_CV_CNNs_Retinopathy_v2.ipynb:
+Scores:
+{'AUC_custom': 0.5305731410089367, 'AUC_ft': 0.7051059981298957, 'AUC_custom_half': 0.5530340102764865, 'AUC_ft_half': 0.6955183100888997}
+
+second_attempt_tuned.ipynb:
+Scores:
+{'AUC_custom': 0.7658281854366898, 'AUC_ft': 0.7699260644521768, 'AUC_custom_half': 0.7429247206590001, 'AUC_ft_half': 0.7442908408775792}

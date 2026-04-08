@@ -1,0 +1,146 @@
+Edits and implementations by Maria - 08/04
+==========================================
+
+----------------------------------------------------------------------
+1. first_attempt.ipynb — Baseline
+----------------------------------------------------------------------
+Custom model (CUSTOM category):
+- CustomNet: 4-block CNN with 5x5 no-padding convolutions
+  Channels: 3->6->16->32->64, each block has BatchNorm + MaxPool2d
+  Flattens to 64x10x10 = 6400 dimensions
+  FC head: Linear(6400,120) -> Linear(120,84) -> Dropout(0.5) -> Linear(84,1)
+- Optimizer: SGD, lr=1e-2, momentum=0.9
+- Scheduler: StepLR(step_size=10, gamma=0.1)
+- Epochs: 30, patience=7
+
+Fine-tuned model (FINE-TUNING category):
+- EfficientNet-B0 pretrained on ImageNet
+  Unfrozen blocks: features[6,7,8] + classifier
+  Head: Dropout(0.3) -> Linear(1280,1)
+- Optimizer: SGD, lr=1e-3, momentum=0.9
+- Scheduler: StepLR(step_size=7, gamma=0.1)
+- Epochs: 20, patience=5
+
+Shared setup:
+- Loss: BCEWithLogitsLoss with pos_weight=n_neg/n_pos (~2.7x) for class imbalance
+- Batch size: 64 (train), 256 (val/test)
+- Train augmentation: CropByEye(0.10,1) -> Rescale(256) -> TVRandomHorizontalFlip
+  -> TVRandomRotation(15deg) -> TVColorJitter -> RandomCrop(224) -> ToTensor -> Normalize
+- Val/test pipeline: CropByEye -> Rescale(224) -> CenterCrop(224) -> ToTensor -> Normalize
+- No TTA, no ensemble
+
+Results: custom AUC 0.570 / 0.597, ft AUC 0.698 / 0.708 (public / private)
+
+
+----------------------------------------------------------------------
+2. attempt_with_b.ipynb — Experiment B: Adam + CosineAnnealingLR for CustomNet
+----------------------------------------------------------------------
+Changes vs first_attempt:
+- CustomNet optimizer changed from SGD to Adam (lr=1e-3, weight_decay=1e-4)
+- CustomNet scheduler changed to CosineAnnealingLR(T_max=50)
+- CustomNet epochs increased from 30 to 50, patience from 7 to 10
+- train_model() extended with patience argument for early stopping
+- EfficientNet config unchanged (SGD, StepLR, 20 epochs, patience=5)
+- No CLAHE, no TTA, no ensemble
+
+Rationale: Adam converges more reliably than SGD on small datasets (2000 images);
+cosine schedule avoids sharp lr drops of StepLR.
+
+Results: custom AUC 0.558 / 0.566, ft AUC 0.692 / 0.693 (public / private)
+Note: Slight regression vs baseline for both models.
+
+
+----------------------------------------------------------------------
+3. attempt_with_a_b.ipynb — Experiments A+B: CLAHE preprocessing + Adam/cosine
+----------------------------------------------------------------------
+Changes vs attempt_with_b:
+- Added CLAHETransform() as the first step in BOTH train and val/test pipelines
+  CLAHE applied on LAB color space L-channel (clipLimit=2.0, tileGridSize=8x8)
+  Enhances local contrast to make vessels and lesions more visible
+- CustomNet: same as attempt_with_b (Adam, CosineAnnealingLR, 50 epochs, patience=10)
+- EfficientNet: unchanged from baseline (SGD, StepLR, 20 epochs, patience=5)
+- No TTA, no ensemble
+
+Rationale: CLAHE is a standard preprocessing step in retinal image analysis to
+compensate for uneven illumination across fundus images.
+
+Results: custom AUC 0.544 / 0.562, ft AUC 0.711 / 0.692 (public / private)
+Warning: CLAHE likely breaks CropByEye's intensity threshold (the eye segmentation
+relies on raw pixel intensities). Do NOT reintroduce CLAHE before CropByEye.
+
+
+----------------------------------------------------------------------
+4. attempt_with_c.ipynb — Experiment C: EfficientNet-B0 with AdamW + CosineAnnealingLR
+----------------------------------------------------------------------
+Changes vs attempt_with_b:
+- EfficientNet optimizer changed from SGD to AdamW (lr=3e-4, weight_decay=1e-2)
+- EfficientNet scheduler changed to CosineAnnealingLR(T_max=30)
+- EfficientNet epochs increased from 20 to 30, patience kept at 7
+- CustomNet reverted to SGD + StepLR (same as baseline), epochs reduced to 30
+- CLAHE removed (not applied)
+- No TTA, no ensemble
+
+Rationale: AdamW + CosineAnnealingLR is recommended for fine-tuning pretrained models
+on small medical image datasets; decoupled weight decay avoids L2 regularization
+interference with adaptive learning rates.
+
+Results: custom AUC 0.561 / 0.579, ft AUC 0.751 / 0.734 (public / private)
+Best fine-tuning result up to this point.
+
+
+----------------------------------------------------------------------
+5. second_attempt.ipynb — Experiments B+C+D+E+F combined
+----------------------------------------------------------------------
+New custom model — CustomNetV2 (CUSTOM category):
+- 5-block CNN with 3x3 same-padding convolutions (replaces 4-block 5x5)
+  Channels: 3->32->64->128->256->256
+  Global Average Pooling replaces 6400-dim flatten (256 scalars output)
+  Head: Dropout(0.2) -> Linear(256,128) -> ReLU -> Dropout(0.4) -> Linear(128,1)
+  bias=False on all Conv2d (BatchNorm absorbs bias)
+- Optimizer: AdamW, lr=1e-3, weight_decay=5e-3
+- Scheduler: CosineAnnealingLR(T_max=50)
+- Epochs: 50, patience=10
+
+Fine-tuned model — EfficientNet-B0 with two-stage training (FINE-TUNING category):
+  Stage 1 (same as attempt_with_c):
+  - Unfrozen: features[6,7,8] + classifier head Dropout(0.3)+Linear(1280,1)
+  - Optimizer: AdamW, lr=3e-4, weight_decay=1e-2
+  - Scheduler: CosineAnnealingLR(T_max=30), epochs=30, patience=7
+  Stage 2 (progressive unfreezing, only runs if Stage1+TTA val AUC >= 0.752):
+  - Additionally unfreezes features[5] with differential lr
+  - All unfrozen layers: lr=3e-5 (lower to avoid destabilising earlier blocks)
+  - Scheduler: CosineAnnealingLR(T_max=15), epochs=15, patience=5
+  - If Stage 2 val AUC <= Stage 1+TTA val AUC, reverts to Stage 1 weights
+
+Test-Time Augmentation (TTA):
+- 2-pass horizontal flip: score = (sigmoid(model(img)) + sigmoid(model(hflip(img)))) / 2
+- Applied to EfficientNet at evaluation; added tta=True flag to eval_val_auc()
+
+Ensemble logic:
+- Grid search over w in {0.10, 0.15, 0.20, 0.25, 0.30} on val set
+- Blend = w * CustomNetV2_scores + (1-w) * EfficientNet_scores
+- Ensemble only used if CustomNetV2 val AUC > 0.62 AND ensemble val AUC > standalone AUC
+
+Saves: best_efficientnet_b0_s1.pth / best_efficientnet_b0_s2.pth
+
+Results: custom AUC 0.744 / 0.731, ft AUC 0.742 / 0.727 (public / private)
+CustomNetV2 is a major jump: from 0.570 to 0.744 on public leaderboard.
+
+
+----------------------------------------------------------------------
+6. second_attempt_tuned.ipynb — Tuned version of second_attempt
+----------------------------------------------------------------------
+Changes vs second_attempt:
+- Added WeightedRandomSampler to the training DataLoader
+  Computes per-sample weights as inverse class frequency (1/class_count)
+  Oversamples the minority DR class (27%) at batch level
+  DataLoader: shuffle=False (mutually exclusive with sampler in PyTorch)
+- All other architecture, optimizer, scheduler, TTA, and ensemble logic
+  is identical to second_attempt
+
+Rationale: pos_weight in the loss handles class imbalance at the gradient level,
+but WeightedRandomSampler ensures each mini-batch sees a more balanced class
+distribution, improving convergence stability for CustomNetV2 training from scratch.
+
+Results: custom AUC 0.766 / 0.743, ft AUC 0.770 / 0.744 (public / private)
+Current best for both submission categories.
