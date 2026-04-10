@@ -1,0 +1,334 @@
+5.7s	1	0.00s - Debugger warning: It seems that frozen modules are being used, which may
+5.7s	2	0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off
+5.7s	3	0.00s - to python to disable frozen modules.
+5.7s	4	0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.
+6.3s	5	0.00s - Debugger warning: It seems that frozen modules are being used, which may
+6.3s	6	0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off
+6.3s	7	0.00s - to python to disable frozen modules.
+6.3s	8	0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.
+19.0s	9	cuda:0
+19.2s	10	Train: 2000  Val: 500  Test: 1000
+19.5s	11	No-DR: 1468  DR: 532  pos_weight: 2.759
+25.0s	12	Input shape:  torch.Size([64, 3, 224, 224])
+25.0s	13	Output shape: torch.Size([64, 1])
+25.0s	14	CustomNetV2 — total params: 1,012,257  classifier params: 33,025
+25.2s	15	Epoch 0/49
+25.2s	16	----------
+190.3s	17	train Loss: 1.1135  AUC: 0.5346
+224.6s	18	val Loss: 1.4095  AUC: 0.5962
+224.6s	19	
+224.6s	20	Epoch 1/49
+224.6s	21	----------
+386.7s	22	train Loss: 1.1017  AUC: 0.5413
+418.5s	23	val Loss: 1.3094  AUC: 0.6075
+418.5s	24	
+418.5s	25	Epoch 2/49
+418.5s	26	----------
+576.9s	27	train Loss: 1.0855  AUC: 0.5753
+608.5s	28	val Loss: 1.1092  AUC: 0.5546
+608.5s	29	
+608.5s	30	Epoch 3/49
+608.5s	31	----------
+765.4s	32	train Loss: 1.0928  AUC: 0.5518
+796.8s	33	val Loss: 1.1204  AUC: 0.5956
+796.8s	34	
+796.8s	35	Epoch 4/49
+796.8s	36	----------
+952.9s	37	train Loss: 1.0894  AUC: 0.5393
+984.8s	38	val Loss: 1.1300  AUC: 0.5923
+984.8s	39	
+984.8s	40	Epoch 5/49
+984.8s	41	----------
+1142.7s	42	train Loss: 1.0881  AUC: 0.5254
+1174.4s	43	val Loss: 1.1456  AUC: 0.6540
+1174.4s	44	
+1174.4s	45	Epoch 6/49
+1174.4s	46	----------
+1331.4s	47	train Loss: 1.0923  AUC: 0.5278
+1363.2s	48	val Loss: 1.3058  AUC: 0.6381
+1363.2s	49	
+1363.2s	50	Epoch 7/49
+1363.2s	51	----------
+1519.2s	52	train Loss: 1.0811  AUC: 0.5471
+1550.7s	53	val Loss: 1.1579  AUC: 0.5848
+1550.7s	54	
+1550.7s	55	Epoch 8/49
+1550.7s	56	----------
+1707.4s	57	train Loss: 1.0857  AUC: 0.5630
+1738.9s	58	val Loss: 1.1637  AUC: 0.6118
+1738.9s	59	
+1738.9s	60	Epoch 9/49
+1738.9s	61	----------
+1894.5s	62	train Loss: 1.0671  AUC: 0.5803
+1926.2s	63	val Loss: 1.2657  AUC: 0.5882
+1926.2s	64	
+1926.2s	65	Epoch 10/49
+1926.2s	66	----------
+2083.0s	67	train Loss: 1.0798  AUC: 0.5566
+2114.7s	68	val Loss: 1.2688  AUC: 0.6282
+2114.7s	69	
+2114.7s	70	Epoch 11/49
+2114.7s	71	----------
+2271.5s	72	train Loss: 1.0830  AUC: 0.5628
+2303.2s	73	val Loss: 1.1897  AUC: 0.5756
+2303.2s	74	
+2303.2s	75	Epoch 12/49
+2303.2s	76	----------
+2460.8s	77	train Loss: 1.0821  AUC: 0.5629
+2492.4s	78	val Loss: 1.1840  AUC: 0.6011
+2492.4s	79	
+2492.4s	80	Epoch 13/49
+2492.4s	81	----------
+2650.7s	82	train Loss: 1.0951  AUC: 0.5396
+2682.4s	83	val Loss: 1.1714  AUC: 0.6191
+2682.4s	84	
+2682.4s	85	Epoch 14/49
+2682.4s	86	----------
+2840.1s	87	train Loss: 1.0840  AUC: 0.5469
+2872.1s	88	val Loss: 1.2011  AUC: 0.6079
+2872.1s	89	
+2872.1s	90	Epoch 15/49
+2872.1s	91	----------
+3032.1s	92	train Loss: 1.0787  AUC: 0.5677
+3064.3s	93	val Loss: 1.1956  AUC: 0.6560
+3064.3s	94	
+3064.3s	95	Epoch 16/49
+3064.3s	96	----------
+3222.4s	97	train Loss: 1.0762  AUC: 0.5763
+3254.1s	98	val Loss: 1.1595  AUC: 0.6305
+3254.1s	99	
+3254.1s	100	Epoch 17/49
+3254.1s	101	----------
+3411.9s	102	train Loss: 1.0691  AUC: 0.5587
+3443.8s	103	val Loss: 1.1663  AUC: 0.6004
+3443.8s	104	
+3443.8s	105	Epoch 18/49
+3443.8s	106	----------
+3603.0s	107	train Loss: 1.0810  AUC: 0.5525
+3633.6s	108	val Loss: 1.1409  AUC: 0.6322
+3633.6s	109	
+3633.6s	110	Epoch 19/49
+3633.6s	111	----------
+3785.8s	112	train Loss: 1.0823  AUC: 0.5664
+3816.6s	113	val Loss: 1.1595  AUC: 0.6357
+3816.6s	114	
+3816.6s	115	Epoch 20/49
+3816.6s	116	----------
+3970.8s	117	train Loss: 1.0780  AUC: 0.5926
+4001.6s	118	val Loss: 1.1720  AUC: 0.6416
+4001.6s	119	
+4001.6s	120	Epoch 21/49
+4001.6s	121	----------
+4160.8s	122	train Loss: 1.0787  AUC: 0.5617
+4193.1s	123	val Loss: 1.1829  AUC: 0.5786
+4193.1s	124	
+4193.1s	125	Epoch 22/49
+4193.1s	126	----------
+4345.6s	127	train Loss: 1.0666  AUC: 0.5780
+4376.3s	128	val Loss: 1.1690  AUC: 0.6271
+4376.3s	129	
+4376.3s	130	Epoch 23/49
+4376.3s	131	----------
+4530.6s	132	train Loss: 1.0720  AUC: 0.5838
+4561.8s	133	val Loss: 1.0818  AUC: 0.6333
+4561.8s	134	
+4561.8s	135	Epoch 24/49
+4561.8s	136	----------
+4720.1s	137	train Loss: 1.0816  AUC: 0.5759
+4751.9s	138	val Loss: 1.2424  AUC: 0.6148
+4751.9s	139	
+4751.9s	140	Epoch 25/49
+4751.9s	141	----------
+4910.1s	142	train Loss: 1.0579  AUC: 0.5919
+4941.9s	143	val Loss: 1.1014  AUC: 0.6141
+4941.9s	144	Early stopping: no improvement for 10 epochs.
+4942.1s	145	Saved: best_customnetv2.pth
+4973.9s	146	CustomNetV2  --  val AUC: 0.6560
+4974.0s	147	Downloading: "https://download.pytorch.org/models/efficientnet_b0_rwightman-7f5810bc.pth" to /root/.cache/torch/hub/checkpoints/efficientnet_b0_rwightman-7f5810bc.pth
+4974.3s	148	
+  0%|          | 0.00/20.5M [00:00<?, ?B/s]
+4974.4s	149	
+  0%|          | 0.00/20.5M [00:00<?, ?B/s]
+ 72%|███████▏  | 14.6M/20.5M [00:00<00:00, 153MB/s]
+4974.5s	150	
+ 72%|███████▏  | 14.6M/20.5M [00:00<00:00, 153MB/s]
+100%|██████████| 20.5M/20.5M [00:00<00:00, 166MB/s]
+4974.5s	151	EfficientNet-B0  Trainable: 3,157,021 / 4,008,829 params
+4974.5s	152	
+100%|██████████| 20.5M/20.5M [00:00<00:00, 166MB/s]
+4974.5s	153	
+4974.5s	154	
+4974.7s	155	Epoch 0/29
+4974.7s	156	----------
+5133.2s	157	train Loss: 1.0678  AUC: 0.6322
+5165.5s	158	val Loss: 1.0639  AUC: 0.7132
+5165.5s	159	
+5165.5s	160	Epoch 1/29
+5165.5s	161	----------
+5323.0s	162	train Loss: 0.9170  AUC: 0.7661
+5356.0s	163	val Loss: 0.8964  AUC: 0.7351
+5356.0s	164	
+5356.0s	165	Epoch 2/29
+5356.0s	166	----------
+5513.1s	167	train Loss: 0.8290  AUC: 0.8172
+5545.4s	168	val Loss: 0.9216  AUC: 0.7526
+5545.4s	169	
+5545.4s	170	Epoch 3/29
+5545.4s	171	----------
+5702.5s	172	train Loss: 0.8067  AUC: 0.8381
+5734.9s	173	val Loss: 0.8379  AUC: 0.7441
+5734.9s	174	
+5734.9s	175	Epoch 4/29
+5734.9s	176	----------
+5892.0s	177	train Loss: 0.7649  AUC: 0.8565
+5924.0s	178	val Loss: 0.9422  AUC: 0.7303
+5924.0s	179	
+5924.0s	180	Epoch 5/29
+5924.0s	181	----------
+6080.2s	182	train Loss: 0.7364  AUC: 0.8667
+6112.1s	183	val Loss: 0.8857  AUC: 0.7351
+6112.1s	184	
+6112.1s	185	Epoch 6/29
+6112.1s	186	----------
+6268.4s	187	train Loss: 0.6498  AUC: 0.9016
+6300.5s	188	val Loss: 1.0776  AUC: 0.7201
+6300.5s	189	
+6300.5s	190	Epoch 7/29
+6300.5s	191	----------
+6456.7s	192	train Loss: 0.6468  AUC: 0.9021
+6488.7s	193	val Loss: 0.9207  AUC: 0.7574
+6488.7s	194	
+6488.7s	195	Epoch 8/29
+6488.7s	196	----------
+6645.4s	197	train Loss: 0.5926  AUC: 0.9175
+6677.7s	198	val Loss: 0.9475  AUC: 0.7484
+6677.7s	199	
+6677.7s	200	Epoch 9/29
+6677.7s	201	----------
+6834.2s	202	train Loss: 0.5680  AUC: 0.9254
+6866.5s	203	val Loss: 1.0198  AUC: 0.7422
+6866.5s	204	
+6866.5s	205	Epoch 10/29
+6866.5s	206	----------
+7023.2s	207	train Loss: 0.5369  AUC: 0.9349
+7055.3s	208	val Loss: 0.9890  AUC: 0.7478
+7055.3s	209	
+7055.3s	210	Epoch 11/29
+7055.3s	211	----------
+7212.0s	212	train Loss: 0.5024  AUC: 0.9431
+7244.1s	213	val Loss: 1.0413  AUC: 0.7527
+7244.1s	214	
+7244.1s	215	Epoch 12/29
+7244.1s	216	----------
+7399.6s	217	train Loss: 0.4499  AUC: 0.9543
+7432.5s	218	val Loss: 1.1525  AUC: 0.7447
+7432.5s	219	
+7432.5s	220	Epoch 13/29
+7432.5s	221	----------
+7590.8s	222	train Loss: 0.4331  AUC: 0.9579
+7623.3s	223	val Loss: 1.0733  AUC: 0.7541
+7623.3s	224	
+7623.3s	225	Epoch 14/29
+7623.3s	226	----------
+7780.2s	227	train Loss: 0.4342  AUC: 0.9574
+7812.6s	228	val Loss: 0.9749  AUC: 0.7793
+7812.6s	229	
+7812.6s	230	Epoch 15/29
+7812.6s	231	----------
+7970.5s	232	train Loss: 0.3996  AUC: 0.9648
+8003.1s	233	val Loss: 1.0723  AUC: 0.7696
+8003.1s	234	
+8003.1s	235	Epoch 16/29
+8003.1s	236	----------
+8161.0s	237	train Loss: 0.3432  AUC: 0.9747
+8192.9s	238	val Loss: 1.1057  AUC: 0.7682
+8192.9s	239	
+8192.9s	240	Epoch 17/29
+8192.9s	241	----------
+8349.2s	242	train Loss: 0.3245  AUC: 0.9759
+8381.5s	243	val Loss: 1.1719  AUC: 0.7622
+8381.5s	244	
+8381.5s	245	Epoch 18/29
+8381.5s	246	----------
+8538.0s	247	train Loss: 0.3466  AUC: 0.9741
+8570.1s	248	val Loss: 1.1852  AUC: 0.7706
+8570.1s	249	
+8570.1s	250	Epoch 19/29
+8570.1s	251	----------
+8726.9s	252	train Loss: 0.3516  AUC: 0.9719
+8759.4s	253	val Loss: 1.2130  AUC: 0.7643
+8759.4s	254	
+8759.4s	255	Epoch 20/29
+8759.4s	256	----------
+8911.9s	257	train Loss: 0.2750  AUC: 0.9851
+8942.9s	258	val Loss: 1.2175  AUC: 0.7711
+8942.9s	259	
+8942.9s	260	Epoch 21/29
+8942.9s	261	----------
+9095.4s	262	train Loss: 0.2963  AUC: 0.9802
+9126.3s	263	val Loss: 1.2817  AUC: 0.7607
+9126.3s	264	Early stopping: no improvement for 7 epochs.
+9126.5s	265	Saved: best_efficientnet_b0_s1.pth
+9157.3s	266	EfficientNet-B0 Stage 1  --  val AUC: 0.7793
+9188.6s	267	EfficientNet-B0 Stage 1 (TTA)  --  val AUC: 0.7880
+9188.7s	268	Stage 2 trainable params: 3,700,169
+9188.9s	269	Epoch 0/14
+9188.9s	270	----------
+9342.9s	271	train Loss: 0.2805  AUC: 0.9854
+9374.1s	272	val Loss: 0.9574  AUC: 0.7827
+9374.1s	273	
+9374.1s	274	Epoch 1/14
+9374.1s	275	----------
+9529.2s	276	train Loss: 0.2586  AUC: 0.9891
+9560.4s	277	val Loss: 0.9964  AUC: 0.7782
+9560.4s	278	
+9560.4s	279	Epoch 2/14
+9560.4s	280	----------
+9715.7s	281	train Loss: 0.1990  AUC: 0.9945
+9746.6s	282	val Loss: 1.0429  AUC: 0.7779
+9746.6s	283	
+9746.6s	284	Epoch 3/14
+9746.6s	285	----------
+9901.2s	286	train Loss: 0.1669  AUC: 0.9969
+9932.1s	287	val Loss: 1.0758  AUC: 0.7785
+9932.1s	288	
+9932.1s	289	Epoch 4/14
+9932.1s	290	----------
+10085.5s	291	train Loss: 0.1496  AUC: 0.9973
+10116.0s	292	val Loss: 1.1705  AUC: 0.7741
+10116.0s	293	
+10116.0s	294	Epoch 5/14
+10116.0s	295	----------
+10269.1s	296	train Loss: 0.1338  AUC: 0.9976
+10299.8s	297	val Loss: 1.2262  AUC: 0.7738
+10299.8s	298	Early stopping: no improvement for 5 epochs.
+10331.3s	299	EfficientNet-B0 Stage 2 (TTA)  --  val AUC: 0.7902
+10331.3s	300	Stage 2 better (0.7902 > 0.7880). Using Stage 2.
+10392.6s	301	CustomNetV2 val AUC: 0.6560
+10392.6s	302	Best ftNet  val AUC: 0.7902
+10392.6s	303	Tuning ensemble weight on val set...
+10392.6s	304	  w=0.10  ensemble val AUC: 0.7928
+10392.6s	305	  w=0.15  ensemble val AUC: 0.7940
+10392.6s	306	  w=0.20  ensemble val AUC: 0.7950
+10392.6s	307	  w=0.25  ensemble val AUC: 0.7954
+10392.6s	308	  w=0.30  ensemble val AUC: 0.7960
+10392.6s	309	Best w=0.3  ensemble val AUC: 0.7960
+10392.8s	310	=== Final validation AUC check ===
+10423.1s	311	CustomNetV2  --  val AUC: 0.6560
+10454.3s	312	Best ftNet (TTA)  --  val AUC: 0.7902
+10586.0s	313	Using ensemble (w=0.3) for CUSTOM submission  val AUC: 0.7960
+10586.0s	314	Shapes and finite-value checks passed.
+10586.1s	315	Written: output_custom.csv  output_ft.csv
+10586.1s	316	Created: codabench_submission.zip
+10586.1s	317	
+10586.1s	318	Final val AUC summary:
+10586.1s	319	  CUSTOM  : 0.7960
+10586.1s	320	  FT      : 0.7902
+10590.9s	321	/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\|'
+10590.9s	322	  cells[i][c] = re.sub('\\\\\|', '|', cell)
+10591.0s	323	/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\_'
+10591.0s	324	  text = re.sub(r'_', '\_', text) # Escape underscores in display text
+10591.6s	325	[NbConvertApp] Converting notebook __notebook__.ipynb to notebook
+10591.9s	326	[NbConvertApp] Writing 67728 bytes to __notebook__.ipynb
+10594.3s	327	[NbConvertApp] Converting notebook __notebook__.ipynb to html
+10595.2s	328	[NbConvertApp] Writing 439384 bytes to __results__.html

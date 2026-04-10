@@ -25,3 +25,10 @@ Scores:
 second_attempt_tuned.ipynb:
 Scores:
 {'AUC_custom': 0.7658281854366898, 'AUC_ft': 0.7699260644521768, 'AUC_custom_half': 0.7429247206590001, 'AUC_ft_half': 0.7442908408775792}
+
+second_attempt_tuned_cache.ipynb:
+Scores:
+{'AUC_custom': 0.7364941163245806, 'AUC_ft': 0.7415577049833684, 'AUC_custom_half': 0.7303237908816573, 'AUC_ft_half': 0.7283051953348013}
+
+third_attempt.ipynb:
+???

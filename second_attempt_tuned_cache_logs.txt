@@ -1,0 +1,224 @@
+7.4s	1	0.00s - Debugger warning: It seems that frozen modules are being used, which may
+7.4s	2	0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off
+7.4s	3	0.00s - to python to disable frozen modules.
+7.4s	4	0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.
+8.0s	5	0.00s - Debugger warning: It seems that frozen modules are being used, which may
+8.0s	6	0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off
+8.0s	7	0.00s - to python to disable frozen modules.
+8.0s	8	0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.
+23.5s	9	cuda:0
+23.7s	10	Train: 2000  Val: 500  Test: 1000
+24.1s	11	No-DR: 1468  DR: 532  pos_weight: 2.759
+26.5s	12	Input shape:  torch.Size([64, 3, 224, 224])
+26.5s	13	Output shape: torch.Size([64, 1])
+26.5s	14	CustomNetV2 â€” total params: 1,012,257  classifier params: 33,025
+26.7s	15	Epoch 0/49
+26.7s	16	----------
+65.5s	17	train Loss: 1.1061  AUC: 0.5371
+72.1s	18	val Loss: 1.3274  AUC: 0.6136
+72.1s	19	
+72.1s	20	Epoch 1/49
+72.1s	21	----------
+104.7s	22	train Loss: 1.1020  AUC: 0.5438
+106.4s	23	val Loss: 1.2936  AUC: 0.6105
+106.4s	24	
+106.4s	25	Epoch 2/49
+106.4s	26	----------
+135.6s	27	train Loss: 1.0933  AUC: 0.5742
+137.2s	28	val Loss: 1.0825  AUC: 0.5686
+137.2s	29	
+137.2s	30	Epoch 3/49
+137.2s	31	----------
+165.4s	32	train Loss: 1.0941  AUC: 0.5556
+166.9s	33	val Loss: 1.0963  AUC: 0.5833
+166.9s	34	
+166.9s	35	Epoch 4/49
+166.9s	36	----------
+194.0s	37	train Loss: 1.0810  AUC: 0.5652
+195.5s	38	val Loss: 1.0913  AUC: 0.6403
+195.5s	39	
+195.5s	40	Epoch 5/49
+195.5s	41	----------
+223.0s	42	train Loss: 1.0787  AUC: 0.5572
+224.5s	43	val Loss: 1.1362  AUC: 0.5992
+224.5s	44	
+224.5s	45	Epoch 6/49
+224.5s	46	----------
+253.3s	47	train Loss: 1.0822  AUC: 0.5630
+254.9s	48	val Loss: 1.2528  AUC: 0.6329
+254.9s	49	
+254.9s	50	Epoch 7/49
+254.9s	51	----------
+282.0s	52	train Loss: 1.0750  AUC: 0.5719
+283.7s	53	val Loss: 1.1473  AUC: 0.6369
+283.7s	54	
+283.7s	55	Epoch 8/49
+283.7s	56	----------
+311.3s	57	train Loss: 1.0698  AUC: 0.5990
+312.9s	58	val Loss: 1.3031  AUC: 0.6029
+312.9s	59	
+312.9s	60	Epoch 9/49
+312.9s	61	----------
+340.9s	62	train Loss: 1.0587  AUC: 0.6011
+342.5s	63	val Loss: 1.2476  AUC: 0.5971
+342.5s	64	
+342.5s	65	Epoch 10/49
+342.5s	66	----------
+369.9s	67	train Loss: 1.0714  AUC: 0.5822
+371.5s	68	val Loss: 1.4323  AUC: 0.6183
+371.5s	69	
+371.5s	70	Epoch 11/49
+371.5s	71	----------
+399.0s	72	train Loss: 1.0653  AUC: 0.5917
+400.7s	73	val Loss: 1.3584  AUC: 0.5806
+400.7s	74	
+400.7s	75	Epoch 12/49
+400.7s	76	----------
+428.9s	77	train Loss: 1.0808  AUC: 0.5769
+430.6s	78	val Loss: 1.3361  AUC: 0.5730
+430.6s	79	
+430.6s	80	Epoch 13/49
+430.6s	81	----------
+458.8s	82	train Loss: 1.0925  AUC: 0.5515
+460.4s	83	val Loss: 1.2539  AUC: 0.6375
+460.4s	84	
+460.4s	85	Epoch 14/49
+460.4s	86	----------
+487.5s	87	train Loss: 1.0777  AUC: 0.5584
+488.8s	88	val Loss: 1.1365  AUC: 0.5960
+488.8s	89	Early stopping: no improvement for 10 epochs.
+489.0s	90	Saved: best_customnetv2.pth
+490.3s	91	CustomNetV2  --  val AUC: 0.6403
+490.5s	92	Downloading: "https://download.pytorch.org/models/efficientnet_b0_rwightman-7f5810bc.pth" to /root/.cache/torch/hub/checkpoints/efficientnet_b0_rwightman-7f5810bc.pth
+490.6s	93	
+  0%|          | 0.00/20.5M [00:00<?, ?B/s]
+490.7s	94	
+  0%|          | 0.00/20.5M [00:00<?, ?B/s]
+ 45%|████▌     | 9.25M/20.5M [00:00<00:00, 96.4MB/s]
+490.8s	95	
+ 45%|████▌     | 9.25M/20.5M [00:00<00:00, 96.4MB/s]
+100%|██████████| 20.5M/20.5M [00:00<00:00, 137MB/s] 
+490.8s	96	
+100%|██████████| 20.5M/20.5M [00:00<00:00, 137MB/s] 
+490.8s	97	
+490.8s	98	
+490.8s	99	EfficientNet-B0  Trainable: 3,157,021 / 4,008,829 params
+491.0s	100	Epoch 0/29
+491.0s	101	----------
+516.3s	102	train Loss: 1.0779  AUC: 0.6092
+518.2s	103	val Loss: 1.1751  AUC: 0.7223
+518.2s	104	
+518.2s	105	Epoch 1/29
+518.2s	106	----------
+543.5s	107	train Loss: 0.9112  AUC: 0.7733
+545.3s	108	val Loss: 0.9789  AUC: 0.7365
+545.3s	109	
+545.3s	110	Epoch 2/29
+545.3s	111	----------
+570.7s	112	train Loss: 0.8262  AUC: 0.8246
+572.5s	113	val Loss: 0.9883  AUC: 0.7195
+572.5s	114	
+572.5s	115	Epoch 3/29
+572.5s	116	----------
+597.7s	117	train Loss: 0.7801  AUC: 0.8508
+599.5s	118	val Loss: 0.8684  AUC: 0.7479
+599.5s	119	
+599.5s	120	Epoch 4/29
+599.5s	121	----------
+624.5s	122	train Loss: 0.7350  AUC: 0.8694
+626.3s	123	val Loss: 1.1385  AUC: 0.7068
+626.3s	124	
+626.3s	125	Epoch 5/29
+626.3s	126	----------
+651.5s	127	train Loss: 0.6983  AUC: 0.8825
+653.4s	128	val Loss: 1.0747  AUC: 0.7185
+653.4s	129	
+653.4s	130	Epoch 6/29
+653.4s	131	----------
+679.2s	132	train Loss: 0.6124  AUC: 0.9130
+681.2s	133	val Loss: 1.1638  AUC: 0.7204
+681.2s	134	
+681.2s	135	Epoch 7/29
+681.2s	136	----------
+706.2s	137	train Loss: 0.6081  AUC: 0.9122
+707.9s	138	val Loss: 1.0193  AUC: 0.7442
+707.9s	139	
+707.9s	140	Epoch 8/29
+707.9s	141	----------
+732.6s	142	train Loss: 0.5521  AUC: 0.9289
+734.4s	143	val Loss: 1.0606  AUC: 0.7239
+734.4s	144	
+734.4s	145	Epoch 9/29
+734.4s	146	----------
+759.7s	147	train Loss: 0.5203  AUC: 0.9373
+761.5s	148	val Loss: 1.0518  AUC: 0.7423
+761.5s	149	
+761.5s	150	Epoch 10/29
+761.5s	151	----------
+786.6s	152	train Loss: 0.4586  AUC: 0.9541
+788.4s	153	val Loss: 1.2098  AUC: 0.7186
+788.4s	154	Early stopping: no improvement for 7 epochs.
+788.6s	155	Saved: best_efficientnet_b0_s1.pth
+790.5s	156	EfficientNet-B0 Stage 1  --  val AUC: 0.7479
+793.0s	157	EfficientNet-B0 Stage 1 (TTA)  --  val AUC: 0.7517
+793.1s	158	Stage 2 trainable params: 3,700,169
+793.2s	159	Epoch 0/14
+793.2s	160	----------
+819.9s	161	train Loss: 0.5429  AUC: 0.9521
+821.9s	162	val Loss: 0.9060  AUC: 0.7469
+821.9s	163	
+821.9s	164	Epoch 1/14
+821.9s	165	----------
+848.0s	166	train Loss: 0.4645  AUC: 0.9776
+849.7s	167	val Loss: 0.9312  AUC: 0.7462
+849.7s	168	
+849.7s	169	Epoch 2/14
+849.7s	170	----------
+876.8s	171	train Loss: 0.3677  AUC: 0.9914
+878.5s	172	val Loss: 0.9525  AUC: 0.7424
+878.5s	173	
+878.5s	174	Epoch 3/14
+878.5s	175	----------
+904.9s	176	train Loss: 0.3426  AUC: 0.9882
+906.6s	177	val Loss: 1.0289  AUC: 0.7413
+906.6s	178	
+906.6s	179	Epoch 4/14
+906.6s	180	----------
+932.6s	181	train Loss: 0.7034  AUC: 0.8825
+934.3s	182	val Loss: 0.9815  AUC: 0.7330
+934.3s	183	
+934.3s	184	Epoch 5/14
+934.3s	185	----------
+960.4s	186	train Loss: 0.6659  AUC: 0.8948
+961.9s	187	val Loss: 1.0003  AUC: 0.7280
+961.9s	188	Early stopping: no improvement for 5 epochs.
+964.8s	189	EfficientNet-B0 Stage 2 (TTA)  --  val AUC: 0.7497
+964.8s	190	Stage 2 did NOT improve (0.7497 <= 0.7517). Reverting to Stage 1.
+969.0s	191	CustomNetV2 val AUC: 0.6403
+969.0s	192	Best ftNet  val AUC: 0.7517
+969.1s	193	Tuning ensemble weight on val set...
+969.1s	194	  w=0.10  ensemble val AUC: 0.7533
+969.1s	195	  w=0.15  ensemble val AUC: 0.7538
+969.1s	196	  w=0.20  ensemble val AUC: 0.7542
+969.1s	197	  w=0.25  ensemble val AUC: 0.7546
+969.1s	198	  w=0.30  ensemble val AUC: 0.7551
+969.1s	199	Best w=0.3  ensemble val AUC: 0.7551
+969.2s	200	=== Final validation AUC check ===
+970.8s	201	CustomNetV2  --  val AUC: 0.6403
+973.3s	202	Best ftNet (TTA)  --  val AUC: 0.7517
+990.5s	203	Using ensemble (w=0.3) for CUSTOM submission  val AUC: 0.7551
+990.5s	204	Shapes and finite-value checks passed.
+990.5s	205	Written: output_custom.csv  output_ft.csv
+990.5s	206	Created: codabench_submission.zip
+990.5s	207	
+990.5s	208	Final val AUC summary:
+990.5s	209	  CUSTOM  : 0.7551
+990.5s	210	  FT      : 0.7517
+996.2s	211	/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\|'
+996.2s	212	  cells[i][c] = re.sub('\\\\\|', '|', cell)
+996.3s	213	/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\_'
+996.3s	214	  text = re.sub(r'_', '\_', text) # Escape underscores in display text
+997.0s	215	[NbConvertApp] Converting notebook __notebook__.ipynb to notebook
+997.3s	216	[NbConvertApp] Writing 67930 bytes to __notebook__.ipynb
+999.7s	217	[NbConvertApp] Converting notebook __notebook__.ipynb to html
+1000.7s	218	[NbConvertApp] Writing 445914 bytes to __results__.html
