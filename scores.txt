@@ -31,4 +31,13 @@ Scores:
 {'AUC_custom': 0.7364941163245806, 'AUC_ft': 0.7415577049833684, 'AUC_custom_half': 0.7303237908816573, 'AUC_ft_half': 0.7283051953348013}
 
 third_attempt.ipynb:
-???
+Scores:
+{'AUC_custom': 0.7616843202477122, 'AUC_ft': 0.7656748981917215, 'AUC_custom_half': 0.7424353641627925, 'AUC_ft_half': 0.7426188728488703}
+
+fourth_attempt.ipynb:
+Scores:
+{'AUC_custom': 0.5408791534456417, 'AUC_ft': 0.557485271650546, 'AUC_custom_half': 0.5574382187423539, 'AUC_ft_half': 0.5326645461218498}
+
+fifth_attempt.ipynb:
+Scores:
+{'AUC_custom': 0.7698954070031833, 'AUC_ft': 0.7571419082218169, 'AUC_custom_half': 0.7697169888263599, 'AUC_ft_half': 0.7552198026262132}
