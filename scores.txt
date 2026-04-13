@@ -41,3 +41,7 @@ Scores:
 fifth_attempt.ipynb:
 Scores:
 {'AUC_custom': 0.7698954070031833, 'AUC_ft': 0.7571419082218169, 'AUC_custom_half': 0.7697169888263599, 'AUC_ft_half': 0.7552198026262132}
+
+sixth_attempt.ipynb:
+Scores:
+{'AUC_custom': 0.7858117326057299, 'AUC_ft': 0.7806612811747935, 'AUC_custom_half': 0.7865386183834923, 'AUC_ft_half': 0.7805032215969333}

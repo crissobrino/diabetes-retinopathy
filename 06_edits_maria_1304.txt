@@ -1,0 +1,102 @@
+Edits and implementations by Maria - 13/04
+==========================================
+
+----------------------------------------------------------------------
+11. sixth_attempt.ipynb — Experiments I-1, I-2: DenseNet121 backbone
+    *** NEW BEST IN BOTH CATEGORIES ***
+----------------------------------------------------------------------
+Changes vs fifth_attempt:
+- (I-1) DenseNet121 replaces EfficientNet-B0 as the fine-tuning backbone.
+  Stage 1 unfreezes features.denseblock4 + features.norm5 (~2.16M trainable
+  params, vs 3.15M for EfficientNet features[6-8]).
+  New head: Dropout(0.5) -> Linear(1024, 1)  (DenseNet feature dim = 1024,
+  vs 1280 for EfficientNet).
+  Same optimizer/scheduler as before: AdamW lr=3e-4 wd=1e-2,
+  CosineAnnealingLR(T_max=30), 30 epochs, patience=7, label_smoothing=0.05.
+  Saves best_densenet121_s1.pth.
+
+- (I-2) Stage 2 unfreezes features.denseblock3 + features.transition3
+  (one block deeper than Stage 1).
+  Per-group learning rates:
+    denseblock3 / transition3 (newly unfrozen): lr=3e-5
+    denseblock4 / norm5 (Stage 1 warm):         lr=3e-5
+    classifier head:                             lr=1e-4
+  Scheduler: 3-epoch linear warmup (start_factor=0.1, end_factor=1.0)
+  followed by CosineAnnealingLR(T_max=12), composed via SequentialLR.
+  Same gate and revert logic: only proceeds if Stage 1+TTA val AUC >= 0.752;
+  reverts to Stage 1 weights if Stage 2 val AUC is lower.
+  15 epochs, patience=5, label_smoothing=0.05. Saves best_densenet121_s2.pth.
+
+- CustomNetV2: unchanged. Same architecture, AdamW lr=1e-3 wd=5e-3,
+  CosineAnnealingLR(T_max=50), 50 epochs, patience=10, label_smoothing=0.0.
+
+- All other components identical to fifth_attempt:
+    BenGraham(sigmaX=10) with dtype guard + circular mask (H-1 fixed)
+    4-pass TTA: original + hflip + vflip + rot180 (H-2)
+    label_smoothing=0.05 for DenseNet only (H-3)
+    WeightedRandomSampler (inverse class frequency, shuffle=False)
+    Ensemble grid search w in {0.10...0.30}; skipped if custom val AUC <= 0.62
+    Pipeline sanity-check cell (asserts mean != 0.5 after normalization)
+
+Motivation for I-1 — replacing EfficientNet-B0 with DenseNet121:
+  In fifth_attempt, EfficientNet-B0 Stage 1 reached train AUC 0.919 at its best
+  validation checkpoint (epoch 7, val AUC 0.785), a train/val gap of 0.134.
+  Stage 2 memorised further, reaching train AUC 1.000 while val stagnated.
+  The 2000-image training set is too small for EfficientNet-B0's compound-scaled
+  architecture to regularise naturally.
+
+  DenseNet121 is a natural alternative for this regime:
+  - Dense connections: each layer receives feature maps from all preceding layers
+    within the block, creating implicit regularisation through feature reuse.
+    The model is less likely to memorise because gradients flow to all layers
+    simultaneously, preventing any single layer from dominating.
+  - Established baseline for medical imaging: DenseNet121 (CheXNet) and its
+    variants are the standard backbone for chest X-ray and DR detection benchmarks.
+    The ImageNet weights transfer more reliably to fundus images than EfficientNet's
+    compound-scaled features, which were optimised for a broader accuracy/efficiency
+    trade-off.
+  - Fewer trainable params in Stage 1: ~2.16M vs 3.15M for EfficientNet, reducing
+    the number of parameters that can overfit the 2000 training images.
+
+Motivation for I-2 — warmup scheduler:
+  When Stage 2 unfreezes denseblock3 + transition3, the newly unfrozen layers
+  start with ImageNet-pretrained weights that have not been adapted to the DR task.
+  A sudden lr=3e-5 step at epoch 0 of Stage 2 can create a gradient spike that
+  destabilises the Stage 1 features already adapted in denseblock4. The 3-epoch
+  linear warmup (start_factor=0.1: effective lr=3e-6 at epoch 0, ramping to 3e-5
+  at epoch 3) allows the new layers to align with the adapted features before the
+  full learning rate is applied. After the warmup, CosineAnnealingLR(T_max=12)
+  decays over the remaining 12 epochs.
+
+  This replaces the flat CosineAnnealingLR(T_max=15) used in EfficientNet Stage 2
+  (no warmup), which was sufficient for EfficientNet because features[5] was already
+  partially adapted in that architecture's continuous feature pyramid.
+
+Results: custom AUC 0.786 / 0.787, ft AUC 0.781 / 0.781 (public / private)
+Best scores in both categories across all experiments.
+
+Analysis:
+  CustomNetV2 (unchanged): public +0.016 vs fifth_attempt (0.786 vs 0.770),
+  private +0.017 (0.787 vs 0.770). The BenGraham pipeline, 4-pass TTA, and
+  WeightedRandomSampler are common to both notebooks; the improvement likely
+  reflects natural run-to-run variance or a favourable random seed interaction.
+  CustomNetV2 continues to train and evaluate identically to fifth_attempt.
+
+  DenseNet121: public +0.024 vs fifth_attempt EfficientNet (0.781 vs 0.757),
+  private +0.026 (0.781 vs 0.755). Both public and private AUC improved
+  substantially, confirming that the architecture change (not just variance)
+  is responsible. The private uplift matches the public uplift, suggesting
+  better generalisation rather than test-set overfitting from the Codabench
+  submission loop.
+
+  Compared to second_attempt_tuned (best previous ft result, EfficientNet 0.770
+  public / 0.744 private): DenseNet121 improves by +0.011 public and +0.037
+  private, a large private gain that confirms reduced overfitting.
+
+  The warmup scheduler in Stage 2 cannot be isolated from I-1, but the fact
+  that Stage 2 improved over Stage 1 (rather than regressing as in some earlier
+  EfficientNet runs) is consistent with the warmup preventing early destabilisation.
+
+Current best by category:
+  CUSTOM:       sixth_attempt CustomNetV2    0.786 / 0.787 (public / private)
+  FINE-TUNING:  sixth_attempt DenseNet121    0.781 / 0.781 (public / private)

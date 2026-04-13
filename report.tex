@@ -33,17 +33,17 @@
 \titleformat{\section}
   {\normalfont\bfseries\small\color{accent}}
   {}{0em}{}[{\color{rulecolor}\vspace{-1pt}\hrule height 0.6pt\vspace{1pt}}]
-\titlespacing{\section}{0pt}{6pt}{2pt}
+\titlespacing{\section}{0pt}{5pt}{1pt}
 
 \titleformat{\subsection}
   {\normalfont\small\bfseries}
   {}{0em}{}
-\titlespacing{\subsection}{0pt}{3pt}{1pt}
+\titlespacing{\subsection}{0pt}{2pt}{1pt}
 
 %% ── Paragraph / list style ───────────────────────────────────────
-\setlength{\parskip}{2pt}
+\setlength{\parskip}{1pt}
 \setlength{\parindent}{0pt}
-\setlist[itemize]{topsep=1pt, itemsep=0pt, leftmargin=10pt,
+\setlist[itemize]{topsep=0pt, itemsep=0pt, leftmargin=10pt,
                   label=\raisebox{0.3ex}{\tiny$\bullet$}, parsep=0pt}
 
 %% ── Captions ─────────────────────────────────────────────────────
@@ -86,11 +86,12 @@ images with a severe class imbalance (73\% No-DR, 27\% DR). Right-eye
 images are horizontally mirrored to unify anatomical orientation.
 
 \textbf{Pipeline.}
-A threshold-based \texttt{CropByEye} transform crops the visible retinal
-disc, removing black borders. Images are rescaled to 256\,px; training
-augmentations add random horizontal flip, rotation ($\pm$15°), colour
-jitter, and a random 224\,px crop. Validation uses a deterministic centre
-crop. All images are ImageNet-normalised
+\texttt{CropByEye} crops the visible retinal disc via intensity thresholding.
+BenGraham local contrast normalisation~\cite{graham2015kaggle} (sigmaX=10,
+circular background mask) then enhances microaneurysms and vessel structure.
+Images are rescaled to 256\,px; training augmentations add random horizontal
+flip, rotation ($\pm$15°), colour jitter, and a random 224\,px crop.
+Validation uses a centre crop. All images are ImageNet-normalised
 ($\mu$=[0.485,\,0.456,\,0.406]; $\sigma$=[0.229,\,0.224,\,0.225]).
 
 %% ── 3. CUSTOM MODEL ──────────────────────────────────────────────
@@ -113,29 +114,30 @@ To improve generalisation on the small training set:
   \item \textbf{Optimiser}: AdamW (lr=1e-3, wd=5e-3),
         CosineAnnealingLR ($T_\text{max}$=50), 50\,epochs, patience=10.
 \end{itemize}
-Adding \texttt{WeightedRandomSampler} raises public AUC from 0.744 to
-\textbf{0.766} (+34\% over baseline).
+Adding \texttt{WeightedRandomSampler} raises public AUC to 0.766; with
+BenGraham preprocessing and 4-pass TTA the final best is \textbf{0.786}.
 
 %% ── 4. FINE-TUNING MODEL ─────────────────────────────────────────
 \section{Fine-tuning Model (FINE-TUNING)}
 
-\subsection{Backbone: EfficientNet-B0}
-ResNet18~\cite{he2016deep} yielded 0.698 AUC. We switched to
-\textbf{EfficientNet-B0}~\cite{tan2019efficientnet} (ImageNet top-1
-77.1\%), replacing its classifier with \texttt{Dropout}(0.3)→Linear(1280,1).
-Unfreezing only \texttt{features[6--8]} plus the new head (3.16\,M of
-4.01\,M parameters), with AdamW~\cite{loshchilov2019adamw} (lr=3e-4,
-wd=1e-2) and CosineAnnealingLR ($T_\text{max}$=30) for 30\,epochs, raised
-AUC to 0.751.
+ResNet18~\cite{he2016deep} (0.698) was superseded by
+\textbf{EfficientNet-B0}~\cite{tan2019efficientnet} with two-stage
+progressive unfreezing (\texttt{features[6--8]}, then \texttt{features[5]};
+AdamW lr=3e-4, $T_\text{max}$=30, label smoothing), reaching 0.770.
+However, severe overfitting persists: train AUC 0.919 vs.\ val 0.785 at best
+checkpoint (gap 0.134, Fig.\,\ref{fig:curves}).
 
-\subsection{Two-Stage Progressive Unfreezing}
-Fine-tuning all layers on 2\,000 images risks overfitting.
-\emph{Stage~1} trains only deep blocks (\texttt{features[6--8]}) + head.
-\emph{Stage~2} additionally unfreezes \texttt{features[5]} at lr=3e-5,
-triggered only if Stage~1 TTA AUC\,$\geq$\,0.752; Stage~1 weights are
-restored if Stage~2 regresses. Despite this, overfitting persists: train
-AUC reaches 0.957 at the best val checkpoint with a 0.178 train--val gap
-(Fig.~\ref{fig:curves}).
+\textbf{DenseNet121}~\cite{huang2017densely} — dense connections reuse
+features from all preceding layers within each block, providing implicit
+regularisation on 2\,000 images (standard backbone for medical imaging).
+Head: \texttt{Dropout}(0.5)→Linear(1024,1).
+\emph{Stage\,1}: \texttt{denseblock4\,+\,norm5} ($\approx$2.16\,M trainable),
+AdamW lr=3e-4, $T_\text{max}$=30, patience=7.
+\emph{Stage\,2}: additionally unfreezes \texttt{denseblock3\,+\,transition3}
+at lr=3e-5 with a 3-epoch linear warmup (\texttt{SequentialLR}) to prevent
+gradient spikes; same gate (AUC\,$\geq$\,0.752) and revert logic.
+Result: public/private AUC \textbf{0.781/0.781} — near-zero pub--priv gap
+vs.\ 0.026 for EfficientNet.
 
 %% ── 5. TRAINING OPTIMIZATIONS ────────────────────────────────────
 \section{Training Optimizations}
@@ -146,39 +148,35 @@ addresses imbalance at the gradient level. \texttt{WeightedRandomSampler}
 oversamples the minority class at the mini-batch level ($+$0.022\,AUC).
 
 \textbf{Test-Time Augmentation (TTA).}
-Scores are averaged over the original and horizontally-flipped image
-(+0.008--0.012\,AUC, applied at inference only).
+Scores are averaged over four passes: original, horizontal flip, vertical
+flip, and 180° rotation (+0.008--0.012\,AUC). Vertical flip is applied at
+inference only (not training) to preserve the ImageNet upright prior for
+the fine-tuned model.
 
 \textbf{Label Smoothing.}
-For EfficientNet only ($\varepsilon$=0.05), hard targets become soft
-$\{0.025, 0.975\}$, penalising overconfident logits without damaging the
-limited training signal on a small dataset~\cite{muller2019label}.
+For the fine-tuned model only ($\varepsilon$=0.05), hard targets become
+soft $\{0.025, 0.975\}$, penalising overconfident logits without damaging
+the limited training signal~\cite{muller2019label}.
 
 \textbf{Ensemble.}
-A grid search over $w\in\{0.10,\ldots,0.30\}$ on validation selects the
-optimal blend of CustomNetV2 and EfficientNet scores. A val--test gap of
-$\approx$0.02--0.03\,AUC is consistently observed
-(val\,0.796\,$\to$\,public\,0.770).
+Grid search over $w\in\{0.10,\ldots,0.30\}$ on validation blends CustomNetV2
+and fine-tuned scores for the CUSTOM submission (skipped if custom val
+AUC\,$\leq$\,0.62). A consistent val--test gap of $\approx$0.02--0.03 means
+gains below $\sim$0.01 on validation should not be over-interpreted.
 
 %% ── 6. ABLATIONS & NEGATIVE RESULTS ─────────────────────────────
 \section{Ablations \& Negative Results}
 
 \begin{itemize}
-  \item \textbf{CLAHE preprocessing}: histogram equalisation before
-    \texttt{CropByEye} broke its intensity threshold, dropping custom
-    AUC by 4.6\% (0.570→0.544).
-  \item \textbf{Cache pipeline}: pre-computing fixed 224\,px crops
-    removed per-epoch \texttt{RandomCrop} spatial jitter — a key
-    regulariser on 2\,000 images — costing $-$0.028\,AUC despite a 5$\times$
-    speed-up.
-  \item \textbf{Scale jitter (TVRandomResizedCrop)}: no consistent gain
-    ($-$0.004 vs best).
-  \item \textbf{BenGraham preprocessing}: local contrast normalisation
-    caused catastrophic collapse (custom 0.541, ft 0.558) due to a dtype
-    bug: the transform assumed float [0,1] input but received uint8 [0,255]
-    from \texttt{CropByEye}. \texttt{clip(uint8,0,1)} mapped all pixels to
-    $\{0,1\}$; the contrast formula produced uniform grey images, making
-    every training sample indistinguishable.
+  \item \textbf{CLAHE}: broke \texttt{CropByEye}'s intensity threshold
+    ($-$4.6\% custom AUC).
+  \item \textbf{Cache pipeline}: fixed 224\,px crops removed per-epoch
+    \texttt{RandomCrop} spatial jitter ($-$0.028\,AUC despite 5$\times$ speed-up).
+  \item \textbf{Scale jitter (TVRandomResizedCrop)}: no gain ($-$0.004).
+  \item \textbf{BenGraham (buggy)}: assumed float [0,1]; \texttt{CropByEye}
+    passes uint8 [0,255] — \texttt{clip(uint8,0,1)} collapsed all pixels to
+    $\{0,1\}$, producing uniform grey (custom 0.541, ft 0.558). Fixed with
+    dtype guard and circular mask: custom private +0.027 (0.743→0.770).
 \end{itemize}
 
 %% ── 7. INDIVIDUAL CONTRIBUTIONS ─────────────────────────────────
@@ -188,9 +186,12 @@ $\approx$0.02--0.03\,AUC is consistently observed
 \texttt{first\_attempt.ipynb} — class-imbalance analysis, CustomNet
 design, initial data pipeline, and first Codabench submission.
 
-\textbf{Maria Muñoz:} All subsequent work (experiments B–H) —
-CustomNetV2 design, EfficientNet-B0 two-stage fine-tuning, Weighted\-Random\-Sampler, TTA, ensemble grid search, label smoothing,
-scale-jitter and cache ablations, and all notebook documentation.
+\textbf{Maria Muñoz:} All subsequent work (experiments B–I) —
+CustomNetV2 design, EfficientNet-B0 two-stage fine-tuning,
+\texttt{Weighted\-Random\-Sampler}, 4-pass TTA, ensemble grid search,
+label smoothing, BenGraham preprocessing (dtype fix + circular mask),
+DenseNet121 two-stage fine-tuning with warmup scheduler (I-1/I-2), and
+all notebook documentation.
 
 %% ══════════════════════════════════════════════════════════════════
 %% PAGE 2 — TABLES, FIGURES & REFERENCES
@@ -200,33 +201,36 @@ scale-jitter and cache ablations, and all notebook documentation.
 
 \section*{\color{accent}Supplementary Material: Tables, Figures and References}
 {\color{rulecolor}\hrule height 0.6pt}
-\vspace{8pt}
+\vspace{4pt}
 
 %% ── TABLE 1 (full width) ──────────────────────────────────────────
 \captionof{table}{%
   AUC results for all submitted experiments
   (\emph{pub}\,=\,public leaderboard, \emph{priv}\,=\,private).
-  \textbf{Bold}: best result. \textit{Italic\,/\,red rows}: discarded experiment.}
+  \textbf{Bold}: best result per category. \textit{Italic\,/\,red rows}: discarded or failed experiment.}
 \label{tab:results}
 \vspace{3pt}
 \footnotesize
-\setlength{\tabcolsep}{5pt}
-\renewcommand{\arraystretch}{1.22}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.10}
 \begin{tabularx}{\textwidth}{@{}lXcc@{}}
 \toprule
 \textbf{Notebook} & \textbf{Key change(s)} &
   \textbf{Custom AUC} & \textbf{FT AUC} \\
  & & \scriptsize pub\;/\;priv & \scriptsize pub\;/\;priv \\
 \midrule
-\texttt{first\_attempt}         & CustomNet (baseline) + ResNet18 fine-tuning          & 0.570\;/\;0.597 & 0.698\;/\;0.708 \\
-\texttt{attempt\_with\_b}       & CustomNet: Adam optimiser + CosineAnnealingLR        & 0.558\;/\;0.566 & 0.692\;/\;0.693 \\
+\texttt{first\_attempt}         & CustomNet (baseline) + ResNet18 fine-tuning                                     & 0.570\;/\;0.597 & 0.698\;/\;0.708 \\
+\texttt{attempt\_with\_b}       & CustomNet: Adam optimiser + CosineAnnealingLR                                   & 0.558\;/\;0.566 & 0.692\;/\;0.693 \\
 \texttt{attempt\_with\_a\_b}    & \textcolor{red!70!black}{\textit{CLAHE preprocessing — broke CropByEye ($-$4.6\%)}} & \textcolor{red!70!black}{\textit{0.544\;/\;0.562}} & \textcolor{red!70!black}{\textit{0.711\;/\;0.692}} \\
-\texttt{attempt\_with\_c}       & FT: switch to EfficientNet-B0 + AdamW                & 0.561\;/\;0.579 & 0.751\;/\;0.734 \\
-\texttt{second\_attempt}        & CustomNetV2; 2-stage progressive FT; TTA; Ensemble   & 0.744\;/\;0.731 & 0.742\;/\;0.727 \\
-\texttt{second\_attempt\_tuned} & \textcolor{accent}{\textbf{+ WeightedRandomSampler (balanced mini-batches)}} & \textcolor{accent}{\textbf{0.766\;/\;0.743}} & \textcolor{accent}{\textbf{0.770\;/\;0.744}} \\
+\texttt{attempt\_with\_c}       & FT: switch to EfficientNet-B0 + AdamW                                           & 0.561\;/\;0.579 & 0.751\;/\;0.734 \\
+\texttt{second\_attempt}        & CustomNetV2; 2-stage progressive FT; TTA; Ensemble                              & 0.744\;/\;0.731 & 0.742\;/\;0.727 \\
+\texttt{second\_attempt\_tuned} & + WeightedRandomSampler (balanced mini-batches)                                 & 0.766\;/\;0.743 & 0.770\;/\;0.744 \\
 \texttt{s.a.t.\_cache}          & \textcolor{red!70!black}{\textit{Cache pipeline — removes RandomCrop jitter ($-$0.028)}} & \textcolor{red!70!black}{\textit{0.736\;/\;0.730}} & \textcolor{red!70!black}{\textit{0.742\;/\;0.728}} \\
-\texttt{third\_attempt}         & Scale jitter (ResizedCrop); label smoothing; $T_\mathrm{max}$=25 & 0.762\;/\;0.742 & 0.766\;/\;0.743 \\
+\texttt{third\_attempt}         & Scale jitter (ResizedCrop); label smoothing; $T_\mathrm{max}$=25               & 0.762\;/\;0.742 & 0.766\;/\;0.743 \\
 \texttt{fourth\_attempt}        & \textcolor{red!70!black}{\textit{BenGraham — uint8 dtype bug, all images grey ($-$22\%)}} & \textcolor{red!70!black}{\textit{0.541\;/\;0.557}} & \textcolor{red!70!black}{\textit{0.558\;/\;0.533}} \\
+\texttt{fifth\_attempt}         & BenGraham (dtype-fixed) + 4-pass TTA + label smoothing                          & 0.770\;/\;0.770 & 0.757\;/\;0.755 \\
+\rowcolor{rowbest}
+\texttt{sixth\_attempt}         & \textbf{DenseNet121 (I-1/I-2) + warmup scheduler — new best}                    & \textbf{0.786\;/\;0.787} & \textbf{0.781\;/\;0.781} \\
 \bottomrule
 \end{tabularx}
 
@@ -240,7 +244,7 @@ scale-jitter and cache ablations, and all notebook documentation.
 \vspace{3pt}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.18}
+\renewcommand{\arraystretch}{1.10}
 \begin{tabular}{@{}lcc@{}}
 \toprule
 \textbf{Feature} & \textbf{CustomNet} & \textbf{CustomNetV2} \\
@@ -253,8 +257,10 @@ Conv Bias    & Yes                       & No (BN absorbs) \\
 Optimiser    & SGD                       & AdamW (wd=5e-3) \\
 LR schedule  & StepLR ($\gamma$=0.1)    & CosineAnnealingLR \\
 Sampler      & Uniform                   & Weighted (class) \\
+Preprocessing & None                    & BenGraham \\
+TTA          & None                      & 4-pass \\
 \midrule
-Public AUC   & 0.570                     & \textbf{0.766} \\
+Public AUC   & 0.570                     & \textbf{0.786} \\
 \bottomrule
 \end{tabular}
 
@@ -266,15 +272,16 @@ Public AUC   & 0.570                     & \textbf{0.766} \\
 \captionof{figure}{EfficientNet-B0 Stage\,1 training curves
 (\texttt{second\_attempt\_tuned}). Train AUC reaches 0.957 at the
 best val checkpoint ($\star$, epoch\,14) while val AUC peaks at 0.779,
-revealing a gap of 0.178. This overfitting motivated label smoothing,
-progressive unfreezing, and TTA.}
+revealing a gap of 0.178. This persistent overfitting motivated the
+switch to DenseNet121 in \texttt{sixth\_attempt}, which eliminated
+the gap (public and private AUC both 0.781).}
 \label{fig:curves}
 \vspace{3pt}
 
 \begin{tikzpicture}
 \begin{axis}[
   width  = 8.2cm,
-  height = 5.5cm,
+  height = 5.0cm,
   xlabel = {Epoch},
   ylabel = {AUC},
   xmin=0, xmax=21,
@@ -339,6 +346,11 @@ EfficientNet: Rethinking model scaling for convolutional neural networks.
 He, K., Zhang, X., Ren, S., \& Sun, J. (2016).
 Deep residual learning for image recognition.
 \textit{Proc.\ CVPR 2016}, 770--778.
+
+\bibitem{huang2017densely}
+Huang, G., Liu, Z., van der Maaten, L., \& Weinberger, K.\,Q. (2017).
+Densely connected convolutional networks.
+\textit{Proc.\ CVPR 2017}, 4700--4708.
 
 \bibitem{loshchilov2019adamw}
 Loshchilov, I., \& Hutter, F. (2019).
