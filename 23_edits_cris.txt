@@ -1,0 +1,43 @@
+Edits and implementations by Cris - 24/04
+==========================================
+
+----------------------------------------------------------------------
+23. attempt_23.ipynb -- Experiments C-4, C-5, C-6
+    *** NOT SUBMITTED — EfficientNet-B4 OOM, see attempt_24 ***
+----------------------------------------------------------------------
+Changes vs attempt_21.ipynb:
+
+- (C-4) EfficientNet-B4-NS planned as 5th FT backbone.
+  tf_efficientnet_b4_ns (Noisy Student pretrained) via timm.
+  Feature dim = 1792. Head: Dropout(0.5) -> Linear(1792, 1).
+  Stage 1 unfreezes blocks[6] + conv_head + bn2.
+  Stage 2 additionally unfreezes blocks[5].
+
+  Scientific backing:
+  APTOS 2019 Kaggle (fundus DR grading, ~3600 images, same task):
+  top-10 solutions exclusively used EfficientNet-B3 to B7.
+  1st place: EfficientNet-B5 at 456px. 2nd place: B4 at 380px.
+  Noisy Student pretraining (Xie et al., NeurIPS 2020) outperforms
+  standard ImageNet init on fine-grained transfer tasks.
+
+- (C-5) Input resolution increased to 380 px for all backbones.
+  Rescale(256)->RandomCrop(224) replaced with Rescale(416)->
+  RandomCrop/CenterCrop(380). Higher resolution preserves fine vessel
+  detail and microaneurysms (10-125 um diameter; at 224 px these are
+  ~2 px wide, at 380 px they are ~3-4 px).
+
+- (C-6) Rotation augmentation expanded from ±15° to ±180°.
+  Fundus images are rotationally symmetric: the optic disc/macula
+  relative orientation depends on camera angle and patient position.
+  Graham (Kaggle DR 2015 winner) used full 360° rotation as the
+  primary augmentation. The ±15° window discarded 92% of valid
+  rotations.
+
+Outcome: The four existing backbones (DenseNet121, DenseNet169,
+  ResNeXt50, SE-ResNeXt50) were successfully retrained at 380px with
+  ±180° rotation. EfficientNet-B4 training caused CUDA OOM even on a
+  fresh kernel (14.56 GiB GPU fully saturated at batch=16, 380px).
+  Gradient checkpointing and reduced batch sizes did not resolve it.
+  C-5 and C-6 changes carried forward into attempt_24; C-4 dropped.
+
+Results: not submitted — see attempt_24.

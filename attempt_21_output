@@ -1,0 +1,69 @@
+densenet121 TTA val AUC: 0.7799
+densenet169 TTA val AUC: 0.7852
+resnext50 TTA val AUC: 0.8063
+seresnext50 TTA val AUC: 0.7781
+
+Searching combo: ('densenet121', 'densenet169')
+  NEW BEST: {'models': ('densenet121', 'densenet169'), 'weights': {'densenet121': 0.1, 'densenet169': 0.9}, 'auc': np.float64(0.7898310839487309)}
+  NEW BEST: {'models': ('densenet121', 'densenet169'), 'weights': {'densenet121': 0.15, 'densenet169': 0.85}, 'auc': np.float64(0.791358967829556)}
+  NEW BEST: {'models': ('densenet121', 'densenet169'), 'weights': {'densenet121': 0.2, 'densenet169': 0.8}, 'auc': np.float64(0.7934598081656906)}
+  NEW BEST: {'models': ('densenet121', 'densenet169'), 'weights': {'densenet121': 0.25, 'densenet169': 0.75}, 'auc': np.float64(0.7943086325439267)}
+  NEW BEST: {'models': ('densenet121', 'densenet169'), 'weights': {'densenet121': 0.3, 'densenet169': 0.7}, 'auc': np.float64(0.795772854596384)}
+  NEW BEST: {'models': ('densenet121', 'densenet169'), 'weights': {'densenet121': 0.35, 'densenet169': 0.65}, 'auc': np.float64(0.7970248705542823)}
+  NEW BEST: {'models': ('densenet121', 'densenet169'), 'weights': {'densenet121': 0.45, 'densenet169': 0.55}, 'auc': np.float64(0.7972370766488414)}
+
+Searching combo: ('densenet121', 'resnext50')
+  NEW BEST: {'models': ('densenet121', 'resnext50'), 'weights': {'densenet121': 0.1, 'resnext50': 0.9}, 'auc': np.float64(0.8099694423223835)}
+  NEW BEST: {'models': ('densenet121', 'resnext50'), 'weights': {'densenet121': 0.15, 'resnext50': 0.85}, 'auc': np.float64(0.8110092521857228)}
+  NEW BEST: {'models': ('densenet121', 'resnext50'), 'weights': {'densenet121': 0.2, 'resnext50': 0.8}, 'auc': np.float64(0.8123461505814448)}
+  NEW BEST: {'models': ('densenet121', 'resnext50'), 'weights': {'densenet121': 0.25, 'resnext50': 0.75}, 'auc': np.float64(0.8134071810542398)}
+  NEW BEST: {'models': ('densenet121', 'resnext50'), 'weights': {'densenet121': 0.3, 'resnext50': 0.7}, 'auc': np.float64(0.8141711229946523)}
+  NEW BEST: {'models': ('densenet121', 'resnext50'), 'weights': {'densenet121': 0.35, 'resnext50': 0.65}, 'auc': np.float64(0.8141923436041083)}
+
+Searching combo: ('densenet121', 'seresnext50')
+
+Searching combo: ('densenet169', 'resnext50')
+  NEW BEST: {'models': ('densenet169', 'resnext50'), 'weights': {'densenet169': 0.35, 'resnext50': 0.65}, 'auc': np.float64(0.81423478482302)}
+  NEW BEST: {'models': ('densenet169', 'resnext50'), 'weights': {'densenet169': 0.4, 'resnext50': 0.6}, 'auc': np.float64(0.8147865206688736)}
+  NEW BEST: {'models': ('densenet169', 'resnext50'), 'weights': {'densenet169': 0.45, 'resnext50': 0.55}, 'auc': np.float64(0.815317035905271)}
+
+Searching combo: ('densenet169', 'seresnext50')
+
+Searching combo: ('resnext50', 'seresnext50')
+
+Searching combo: ('densenet121', 'densenet169', 'resnext50')
+  NEW BEST: {'models': ('densenet121', 'densenet169', 'resnext50'), 'weights': {'densenet121': 0.1, 'densenet169': 0.25, 'resnext50': 0.65}, 'auc': np.float64(0.8154868007809184)}
+  NEW BEST: {'models': ('densenet121', 'densenet169', 'resnext50'), 'weights': {'densenet121': 0.1, 'densenet169': 0.3, 'resnext50': 0.6000000000000001}, 'auc': np.float64(0.8165266106442577)}
+  NEW BEST: {'models': ('densenet121', 'densenet169', 'resnext50'), 'weights': {'densenet121': 0.1, 'densenet169': 0.35, 'resnext50': 0.55}, 'auc': np.float64(0.8169934640522876)}
+
+Searching combo: ('densenet121', 'densenet169', 'seresnext50')
+
+Searching combo: ('densenet121', 'resnext50', 'seresnext50')
+  NEW BEST: {'models': ('densenet121', 'resnext50', 'seresnext50'), 'weights': {'densenet121': 0.25, 'resnext50': 0.5, 'seresnext50': 0.25}, 'auc': np.float64(0.8171844495373907)}
+  NEW BEST: {'models': ('densenet121', 'resnext50', 'seresnext50'), 'weights': {'densenet121': 0.35, 'resnext50': 0.45, 'seresnext50': 0.2}, 'auc': np.float64(0.8176513029454207)}
+
+Searching combo: ('densenet169', 'resnext50', 'seresnext50')
+  NEW BEST: {'models': ('densenet169', 'resnext50', 'seresnext50'), 'weights': {'densenet169': 0.3, 'resnext50': 0.45, 'seresnext50': 0.24999999999999994}, 'auc': np.float64(0.8176937441643324)}
+  NEW BEST: {'models': ('densenet169', 'resnext50', 'seresnext50'), 'weights': {'densenet169': 0.4, 'resnext50': 0.35, 'seresnext50': 0.25}, 'auc': np.float64(0.8177574059927)}
+  NEW BEST: {'models': ('densenet169', 'resnext50', 'seresnext50'), 'weights': {'densenet169': 0.4, 'resnext50': 0.4, 'seresnext50': 0.19999999999999996}, 'auc': np.float64(0.8181181563534505)}
+  NEW BEST: {'models': ('densenet169', 'resnext50', 'seresnext50'), 'weights': {'densenet169': 0.45, 'resnext50': 0.4, 'seresnext50': 0.15000000000000002}, 'auc': np.float64(0.8181393769629063)}
+  NEW BEST: {'models': ('densenet169', 'resnext50', 'seresnext50'), 'weights': {'densenet169': 0.45, 'resnext50': 0.45, 'seresnext50': 0.10000000000000003}, 'auc': np.float64(0.8182030387912741)}
+
+Searching combo: ('densenet121', 'densenet169', 'resnext50', 'seresnext50')
+  NEW BEST: {'models': ('densenet121', 'densenet169', 'resnext50', 'seresnext50'), 'weights': {'densenet121': 0.1, 'densenet169': 0.25, 'resnext50': 0.5, 'seresnext50': 0.15000000000000002}, 'auc': np.float64(0.818245480010186)}
+  NEW BEST: {'models': ('densenet121', 'densenet169', 'resnext50', 'seresnext50'), 'weights': {'densenet121': 0.1, 'densenet169': 0.3, 'resnext50': 0.35, 'seresnext50': 0.2500000000000001}, 'auc': np.float64(0.8185425685425687)}
+  NEW BEST: {'models': ('densenet121', 'densenet169', 'resnext50', 'seresnext50'), 'weights': {'densenet121': 0.1, 'densenet169': 0.3, 'resnext50': 0.4, 'seresnext50': 0.20000000000000007}, 'auc': np.float64(0.8187972158560392)}
+  NEW BEST: {'models': ('densenet121', 'densenet169', 'resnext50', 'seresnext50'), 'weights': {'densenet121': 0.1, 'densenet169': 0.35, 'resnext50': 0.3, 'seresnext50': 0.25000000000000006}, 'auc': np.float64(0.819136745607334)}
+  NEW BEST: {'models': ('densenet121', 'densenet169', 'resnext50', 'seresnext50'), 'weights': {'densenet121': 0.1, 'densenet169': 0.35, 'resnext50': 0.35, 'seresnext50': 0.20000000000000007}, 'auc': np.float64(0.819730922672099)}
+
+Best FT ensemble found:
+{'models': ('densenet121', 'densenet169', 'resnext50', 'seresnext50'), 'weights': {'densenet121': 0.1, 'densenet169': 0.35, 'resnext50': 0.35, 'seresnext50': 0.20000000000000007}, 'auc': np.float64(0.819730922672099)}
+
+Best single FT model: resnext50  AUC=0.8063
+Best FT ensemble AUC: 0.8197
+
+Computed test scores for densenet121
+Computed test scores for densenet169
+Computed test scores for resnext50
+Computed test scores for seresnext50
+Saved: ft_ensemble_submission.csv

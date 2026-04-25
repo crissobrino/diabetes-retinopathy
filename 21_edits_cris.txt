@@ -1,0 +1,23 @@
+Edits and implementations by Cris - 24/04
+==========================================
+
+----------------------------------------------------------------------
+21. attempt_21.ipynb -- Experiment C-2: Multi-backbone FT ensemble
+    *** SUBMITTED ***
+----------------------------------------------------------------------
+Changes vs attempt_20.ipynb:
+
+- (C-2) Multi-backbone FT ensemble: replaces single DenseNet121 with
+  an ensemble of four pretrained backbones, each trained with the same
+  two-stage progressive unfreezing strategy as sixth_attempt.
+  Backbones:
+    - DenseNet121  (feature dim 1024, Stage 1: denseblock4+norm5)
+    - DenseNet169  (feature dim 1664, Stage 1: denseblock4+norm5)
+    - ResNeXt50-32x4d  (feature dim 2048, Stage 1: layer4)
+    - SE-ResNeXt50-32x4d via timm  (feature dim 2048, Stage 1: layer4)
+  Ensemble weights tuned by grid search on val set.
+  CustomNetV2 + SE unchanged from attempt_20.
+
+Results: val AUC FT:   0.819
+         Codabench FT AUC: 0.810
+         (vs sixth_attempt FT 0.781, +0.029 improvement)
