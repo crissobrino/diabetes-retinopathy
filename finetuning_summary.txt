@@ -1,0 +1,529 @@
+FINE-TUNING MODEL DEVELOPMENT SUMMARY
+Diabetic Retinopathy Detection — FINE-TUNING category only
+(sixth_attempt invalidated by competition rules, excluded from valid submissions.)
+===========================================================================
+
+
+CHRONOLOGICAL EVOLUTION OF FINE-TUNING APPROACHES
+===================================================
+
+1. BASELINE: first_attempt.ipynb
+   Backbone:    EfficientNet-B0 (ImageNet pretrained)
+                Unfrozen blocks: features[6,7,8] + classifier
+                Head: Dropout(0.3) → Linear(1280, 1)
+   Training:    SGD (lr=1e-3, momentum=0.9) + StepLR(step_size=7, gamma=0.1)
+                Loss: BCEWithLogitsLoss(pos_weight ≈ 2.7); 20 epochs, patience=5
+   Result:      0.698 pub / 0.708 priv
+   Notes:       Establishes the floor. AlexNet from the lab template was replaced with
+                EfficientNet-B0 (69.8% → 77.1% ImageNet top-1) as the starting backbone.
+                Single-stage training. No TTA, no ensemble. SGD with StepLR is suboptimal
+                for transfer learning on small datasets: sharp LR drops misalign with the
+                cosine decay profile preferred by adaptive optimisers.
+
+--
+
+2. attempt_with_b.ipynb  (Series B)
+   Changes:     FT model unchanged from baseline (SGD, StepLR, 20 epochs, patience=5).
+                CustomNet optimizer changed to Adam + CosineAnnealingLR (custom-only edit).
+   Result:      0.691 pub / 0.693 priv
+   Notes:       Deliberate control. FT held constant to isolate the custom optimizer change.
+                Slight regression vs baseline is within run-to-run variance.
+
+--
+
+3. attempt_with_a_b.ipynb  (Series A+B)
+   Changes:     CLAHETransform() added as first step in both train and val/test pipelines
+                (LAB colour space, L-channel only; clipLimit=2.0, tileGridSize=8×8).
+                FT architecture and optimizer otherwise unchanged.
+   Result:      0.711 pub / 0.691 priv
+   Notes:       CLAHE improves the public score (+0.020 vs Series B) but private drops.
+                Root cause: CLAHE alters the global intensity distribution. CropByEye uses
+                a fixed threshold (0.10) to detect the eye boundary from raw pixel intensity;
+                after CLAHE, background pixels can exceed the threshold, corrupting the crop.
+                CLAHE is permanently banned from the pipeline after this experiment.
+
+--
+
+4. attempt_with_c.ipynb  (Series C)
+   Changes:     EfficientNet optimizer: SGD → AdamW(lr=3e-4, weight_decay=1e-2)
+                Scheduler: StepLR → CosineAnnealingLR(T_max=30)
+                Epochs: 20 → 30, patience=7
+                CLAHE removed.
+   Result:      0.751 pub / 0.734 priv  (+0.053 pub from baseline)
+   Notes:       Single largest improvement up to this point. AdamW with decoupled weight decay
+                avoids the L2/Adam interference that SGD sidesteps only by ignoring second-order
+                moments entirely. Cosine annealing provides a smooth, gradual LR reduction
+                rather than sudden step drops. AdamW + CosineAnnealingLR is adopted for all
+                subsequent fine-tuning experiments.
+
+--
+
+5. second_attempt.ipynb  (Series D–F)
+   Changes:     Two-stage progressive unfreezing introduced:
+                  Stage 1 (same as Series C): features[6,7,8] + head; AdamW lr=3e-4,
+                    CosineAnnealingLR(T_max=30), 30 epochs, patience=7.
+                  Stage 2: additionally unfreezes features[5]; differential lr=3e-5;
+                    CosineAnnealingLR(T_max=15), 15 epochs, patience=5.
+                    Gate: only runs if Stage 1+TTA val AUC ≥ 0.752.
+                    Reverts to Stage 1 weights if Stage 2 AUC regresses.
+                TTA: 2-pass horizontal flip (score = mean sigmoid of orig + hflip).
+                Ensemble: val-set grid search over w ∈ {0.10, 0.15, 0.20, 0.25, 0.30},
+                    blending EfficientNet and CustomNetV2 scores.
+   Result:      0.742 pub / 0.727 priv
+   Notes:       Regression vs Series C single-stage (0.751). The Stage 2 gate (≥ 0.752)
+                was likely not met in this run, so training stopped at Stage 1 with the
+                same features[6-8] but now competing against a stronger optimizer baseline.
+                The two-stage + TTA + ensemble infrastructure is foundational for all
+                subsequent experiments; later attempts recover the AUC.
+
+--
+
+6. second_attempt_tuned.ipynb
+   Changes:     WeightedRandomSampler added to the training DataLoader.
+                Per-sample weights = inverse class frequency (1/class_count).
+                DataLoader: shuffle=False (incompatible with sampler in PyTorch).
+                All other FT components identical to second_attempt.
+   Result:      0.770 pub / 0.744 priv  (+0.028 pub vs second_attempt)
+   Notes:       The primary benefit is for CustomNetV2 training from scratch, but FT also
+                improves substantially. More balanced mini-batches stabilise Stage 1
+                convergence, allowing the Stage 2 gate (val AUC ≥ 0.752) to be met.
+                WeightedRandomSampler remains in all subsequent attempts.
+
+--
+
+7. second_attempt_tuned_cache.ipynb
+   Changes:     Pre-cached 224px images (CropByEye → Rescale(256) → CenterCrop(224),
+                saved as .npy). DataLoader reads cached tensors directly at training time.
+   Result:      0.742 pub / 0.728 priv  (−0.028 pub regression vs tuned)
+   Notes:       EfficientNet Stage 1 best val AUC dropped from 0.779 (epoch 14 in tuned)
+                to 0.748 (epoch 3). The cache applies CenterCrop at creation time, so
+                RandomCrop(224) is never called during training. On a 2000-image dataset,
+                per-epoch positional crop jitter (32px in both axes) is a primary source
+                of augmentation regularisation. Without it the model memorises faster and
+                peaks lower. Cache pipeline permanently abandoned.
+
+--
+
+8. third_attempt.ipynb  (Series G)
+   Changes:     G-1: Rescale(256)+RandomCrop(224) → TVRandomResizedCrop(224,
+                     scale=(0.65,1.0), ratio=(0.9,1.1)) in training pipeline.
+                G-2: Label smoothing ε=0.05 for EfficientNet training only.
+                     Hard {0,1} targets softened to {0.025, 0.975}.
+                G-3: CustomNetV2 T_max=50 → T_max=25 (custom-only change).
+   Result:      0.766 pub / 0.743 priv
+   Notes:       Marginal improvement over tuned baseline (0.770 pub → 0.766). ResizedCrop
+                combines scale jitter (65–100% of image area) with spatial jitter in one
+                step, increasing per-epoch diversity. However it is later reverted in
+                sixth_attempt because it creates a train/val crop mismatch that is harder
+                to reason about than a fixed Rescale+CenterCrop eval pipeline. Label
+                smoothing (G-2) is retained through sixth_attempt.
+
+--
+
+9. fourth_attempt.ipynb  (Series H) — CATASTROPHIC FAILURE
+   Changes:     H-1: BenGraham local contrast normalisation added to both pipelines.
+                H-2: 4-pass TTA: original + hflip + vflip + rot180.
+                H-3: Label smoothing ε=0.05 for EfficientNet (unchanged from G-2).
+   Result:      0.558 pub / 0.533 priv  (−0.193 pub from baseline; near-random)
+   Root cause:  BenGraham formula applied to uint8 images without a dtype guard.
+                np.clip(uint8_array, 0, 1) clamps every non-zero pixel to 1. Then:
+                  4*1 − 4*GaussianBlur(1) + 128 ≈ 128 everywhere.
+                Every training image was reduced to a uniform neutral-gray rectangle.
+                The model trained on 2000 identical gray patches and converged to a
+                near-constant output function.
+   Notes:       H-2 (4-pass TTA) and H-3 (label smoothing) cannot be evaluated; their
+                effects are entirely masked. All three changes are re-tested in
+                fifth_attempt with the dtype bug fixed.
+
+--
+
+10. fifth_attempt.ipynb  (H-series corrected)
+    Changes:    H-1 (fixed): dtype guard + circular background mask.
+                  Guard:  if image.dtype == np.uint8: img_u8 = image
+                          else: img_u8 = (np.clip(image, 0, 1) * 255).astype(np.uint8)
+                  Mask:   pixels outside circle of radius 0.9*min(h,w)/2 set to gray 128.
+                H-2: 4-pass TTA retained (orig + hflip + vflip + rot180).
+                H-3: Label smoothing ε=0.05 for EfficientNet Stage 1 and Stage 2.
+                Pipeline sanity-check cell added (asserts normalised mean ≠ 0.5).
+                All other FT components identical to second_attempt_tuned.
+    Result:     0.757 pub / 0.755 priv
+    Notes:      Public slightly below second_attempt_tuned EfficientNet (−0.013), but
+                private +0.011 (0.755 vs 0.744). The private uplift is consistent with
+                BenGraham improving generalisation to the held-out test distribution:
+                local contrast normalisation reduces reliance on global illumination cues
+                that vary across imaging devices. 4-pass TTA is adopted permanently.
+
+--
+
+11. sixth_attempt.ipynb  (Series I)  *** NOT VALID — excluded by competition rules ***
+    Changes:    I-1: DenseNet121 replaces EfficientNet-B0.
+                     Head: Dropout(0.5) → Linear(1024, 1).
+                     Stage 1 unfreezes features.denseblock4 + features.norm5 (~2.16M params,
+                     vs 3.15M for EfficientNet features[6-8]).
+                     AdamW lr=3e-4, wd=1e-2, CosineAnnealingLR(T_max=30), 30 epochs,
+                     patience=7, label_smoothing=0.05.
+                I-2: Stage 2 unfreezes features.denseblock3 + features.transition3.
+                     Per-group LRs: denseblock3/transition3/denseblock4/norm5 at 3e-5;
+                     classifier at 1e-4.
+                     Scheduler: 3-epoch linear warmup (start_factor=0.1, end_factor=1.0)
+                     followed by CosineAnnealingLR(T_max=12), composed via SequentialLR.
+                     15 epochs, patience=5, label_smoothing=0.05.
+                     Gate (≥ 0.752) and revert logic unchanged.
+    Result:     0.781 pub / 0.781 priv  (+0.024 pub vs fifth_attempt EfficientNet)
+    Notes:      DenseNet121 provides implicit regularisation via dense feature reuse:
+                each layer receives feature maps from all preceding layers, so gradients
+                flow to all layers simultaneously and no single layer can dominate.
+                Fewer Stage 1 trainable params (2.16M) reduce overfitting on 2000 images.
+                DenseNet121 (CheXNet) is the established backbone for medical imaging
+                benchmarks and transfers reliably from ImageNet to fundus images.
+                The 3-epoch linear warmup in Stage 2 prevents gradient spikes when newly
+                unfrozen layers (pretrained but unadapted) first receive the fine-tuning LR.
+                Both public and private AUC improved equally (+0.024/+0.026), confirming
+                reduced overfitting rather than test-set memorisation.
+                Sixth_attempt serves as the DenseNet121 reference for all Cris experiments.
+
+--
+
+12. seventh_attempt.ipynb  (Series J)
+    Changes:    DenseNet Stage 3 unfreeze attempted (denseblock2 + transition2, one block
+                deeper than Stage 2), in addition to the existing Stage 1+2 layers.
+                8-pass TTA also tested (added rot90/rot270 variants) — reverted immediately,
+                hurt both custom and FT models due to distribution shift.
+    Result:     0.768 pub / 0.754 priv  (−0.013 pub vs sixth_attempt)
+    Notes:      Three unfreezing stages over-parameterises fine-tuning on 2000 training images.
+                Stages 1+2 already cover the top ~5.5M params of DenseNet121; Stage 3 adds
+                further params that overfit without improving AUC. Stage 3 unfreeze
+                permanently abandoned. Two-stage (Stage 1+2) remains the design for all
+                subsequent DenseNet backbones.
+
+--
+
+13. attempt_22.ipynb  (Cris — Series K, FT track)
+    Backbone:   ResNet50 (IMAGENET1K_V2, ~80.9% ImageNet top-1)
+                Head: Dropout(0.5) → Linear(2048, 1)
+    Training:   Stage 1: layer4; lr=1e-4 (lower than DenseNet 3e-4 to compensate for
+                  ~7× more trainable params per unfrozen block).
+                Stage 2: additionally layer3; backbone lr=1e-5, head lr=5e-5;
+                  3-epoch linear warmup + CosineAnnealingLR(T_max=12).
+                  Gate ≥ 0.752, revert logic unchanged. 15 epochs, patience=5.
+    Result:     0.780 pub / 0.791 priv  (paired with eighth_attempt custom)
+    Notes:      IMAGENET1K_V2 uses a modern training recipe that transfers better to
+                medical imaging than V1. ResNet50 slightly underperforms DenseNet121 on
+                public AUC (−0.001) but outperforms on private (+0.010), suggesting that
+                residual connections generalise differently to the unseen test split.
+                Confirms that backbone choice meaningfully affects private AUC.
+
+--
+
+14. attempt_21.ipynb  (Cris — Series C-2)
+    Changes:    Multi-backbone FT ensemble replaces single DenseNet121.
+                Four backbones, each with 2-stage progressive unfreezing:
+                  DenseNet121  (feature dim 1024, Stage 1: denseblock4+norm5)
+                  DenseNet169  (feature dim 1664, Stage 1: denseblock4+norm5)
+                  ResNeXt50-32x4d  (feature dim 2048, Stage 1: layer4)
+                  SE-ResNeXt50-32x4d via timm  (feature dim 2048, Stage 1: layer4)
+                Val-set grid search over all 2/3/4-backbone combos and weights in
+                {0.10, 0.15, ..., 0.80}. Input resolution: 224px (unchanged).
+    Result:     Codabench FT AUC: 0.810 / val AUC: 0.8197 (4-backbone ensemble)
+                Paired with ninth_attempt custom: 0.806 pub / 0.807 priv
+    Notes:      Single-backbone val AUCs (TTA-4): DenseNet121 0.7799, DenseNet169 0.7852,
+                ResNeXt50 0.8063 (best), SE-ResNeXt50 0.7781. Diversity is complementary:
+                dense connections (DenseNet), grouped convolutions (ResNeXt), and channel
+                attention (SE-ResNeXt) capture different feature hierarchies. +0.029 pub
+                vs sixth_attempt single-model DenseNet121.
+
+--
+
+15. attempt_23.ipynb  (Cris — Series C-5, C-6)  *** NOT SUBMITTED — weights used in attempt_24 ***
+    Changes:    C-5: Input resolution raised from 224px to 380px for all backbones.
+                     Rescale(256)→RandomCrop(224) replaced with Rescale(416)→
+                     RandomCrop/CenterCrop(380). Backbones are fully convolutional
+                     (GlobalAveragePooling) and handle any input size natively.
+                     Microaneurysms (10–125 μm diameter) scale from ~2px to ~3–4px,
+                     making them detectable by 3×3 conv filters.
+                C-6: Rotation augmentation expanded from ±15° to ±180°.
+                     Fundus images are rotationally symmetric: optic disc/macula
+                     orientation depends on camera geometry, not anatomy. Any rotation
+                     is a valid fundus image. The ±15° window discarded 92% of
+                     valid orientations.
+                TRAIN_BATCH: 64→32, VAL_BATCH: 256→128 (larger 380px feature maps).
+                C-4: EfficientNet-B4-NS (Noisy Student) planned as 5th backbone —
+                     caused CUDA OOM; see Failed Approaches.
+    Outcome:    All four existing backbones (DenseNet121, DenseNet169, ResNeXt50,
+                SE-ResNeXt50) successfully retrained at 380px with ±180° rotation.
+                .pth checkpoint files saved. Not submitted directly; loaded by attempt_24.
+
+--
+
+16. attempt_24.ipynb  (Cris — Series C-5, C-6, C-7)  *** FINAL BEST ***
+    Changes:    C-7: Loads pre-trained backbone weights from attempt_23 .pth files.
+                     No retraining — inference and ensemble only.
+                     Val-set grid search over all 2/3/4-backbone combos and weights.
+                     Best result: 3-backbone ensemble (SE-ResNeXt50 excluded by search).
+    Result:     val AUC: 0.8671 / Codabench FT AUC: 0.830  (pub 0.835 / priv 0.826)
+                (vs attempt_21 ensemble: +0.025 pub, +0.020 Codabench)
+    Notes:      Resolution and rotation changes from attempt_23 are the primary drivers.
+                The grid search naturally drops SE-ResNeXt50 — its individual val AUC
+                (0.8341) is lower than ResNeXt50 (0.8549) and adds negative correlation
+                to the ensemble when combined with the DenseNet pair.
+
+
+===========================================================================
+FINAL FT VERSION: attempt_24.ipynb (best by Codabench AUC: pub 0.835 / priv 0.826)
+===========================================================================
+
+Rationale for attempt_24 as best:
+  Public AUC  (first 500 test images):  0.835
+  Private AUC (second 500 test images): 0.826
+  Both are the highest FT scores achieved across all experiments.
+  attempt_21 (4-backbone, 224px) scored 0.810 Codabench — attempt_24 adds +0.020
+  entirely from resolution (C-5) and rotation (C-6).
+
+--- Backbones Trained (attempt_23 training; loaded in attempt_24) ---
+
+DenseNet121   (torchvision, ImageNet1K_V1; feature dim = 1024)
+  Head:       Dropout(0.5) → Linear(1024, 1)
+
+DenseNet169   (torchvision, ImageNet1K_V1; feature dim = 1664)
+  Head:       Dropout(0.5) → Linear(1664, 1)
+
+ResNeXt50-32x4d  (torchvision, ImageNet1K_V1; feature dim = 2048)
+  Head:       Dropout(0.5) → Linear(2048, 1)
+
+SE-ResNeXt50-32x4d  (timm; feature dim = 2048)  [trained, excluded by ensemble search]
+  Head:       Dropout(0.5) → Linear(2048, 1)
+
+--- Progressive Unfreezing Strategy (same for all backbones) ---
+
+Stage 1:
+  Unfreeze top layer(s) + head. Freeze entire backbone first.
+    DenseNet121/169: features.denseblock4 + features.norm5
+    ResNeXt50 / SE-ResNeXt50: layer4
+  Optimizer:   AdamW, lr=3e-4, weight_decay=1e-2
+  Scheduler:   CosineAnnealingLR(T_max=30)
+  Epochs:      30 max, patience=7 (early stopping on val AUC)
+  label_smoothing: 0.05
+
+Stage 2:
+  Load Stage 1 best weights. Additionally unfreeze one block deeper.
+    DenseNet121/169: features.denseblock3 + features.transition3
+    ResNeXt50 / SE-ResNeXt50: layer3
+  Gate:        Skip Stage 2 if Stage 1+TTA val AUC < 0.752.
+               Revert to Stage 1 weights if Stage 2 AUC is lower.
+  Per-group LRs (DenseNet example):
+    denseblock3 / transition3  (newly unfrozen): lr = 3e-5
+    denseblock4 / norm5        (Stage 1 warm):   lr = 3e-5
+    classifier head:                             lr = 1e-4
+  Per-group LRs (ResNeXt example):
+    layer3     (newly unfrozen): lr = 3e-5
+    layer4     (Stage 1 warm):   lr = 3e-5
+    fc head:                     lr = 1e-4
+  Scheduler:   LinearLR(start_factor=0.1, end_factor=1.0, total_iters=3)
+               then CosineAnnealingLR(T_max=12), composed via SequentialLR.
+  Epochs:      15 max, patience=5, label_smoothing=0.05
+
+--- Data Pipeline (380px) ---
+
+Training:
+  CropByEye(threshold=0.10, border=1)
+  → BenGraham(sigmaX=10)          [4*img − 4*GaussianBlur(img,10) + 128; uint8 guard + circular mask]
+  → Rescale(416)
+  → TVRandomHorizontalFlip(p=0.5)
+  → TVRandomRotation(180°)         [expanded from ±15° in sixth_attempt]
+  → TVColorJitter(brightness=0.3, contrast=0.3, saturation=0.2, hue=0.05)
+  → RandomCrop(380)                [up from 224 in sixth_attempt]
+  → ToTensor → Normalize(mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225])
+
+Validation / Test:
+  CropByEye → BenGraham → Rescale(416) → CenterCrop(380) → ToTensor → Normalize
+
+--- Training Configuration ---
+
+Loss:               BCEWithLogitsLoss(pos_weight = n_neg/n_pos ≈ 2.759)
+                    (1468 No-DR / 532 DR in training split)
+Sampler:            WeightedRandomSampler (inverse class frequency), shuffle=False
+Batch sizes:        32 train / 128 val  (num_workers=0, WSL)
+Label smoothing:    0.05 for all FT backbones
+cudnn:              deterministic=True, benchmark=False
+Memory:             FT models kept on CPU; moved to GPU one at a time during scoring
+                    + torch.cuda.empty_cache() between backbones
+
+--- TTA (Test-Time Augmentation) ---
+
+4-pass: original + horizontal flip + vertical flip + rot180
+Applied at both val (for Stage 2 gate / ensemble grid search) and test inference.
+  s1 = sigmoid(model(inputs))
+  s2 = sigmoid(model(torch.flip(inputs, dims=[3])))    # hflip
+  s3 = sigmoid(model(torch.flip(inputs, dims=[2])))    # vflip
+  s4 = sigmoid(model(torch.flip(inputs, dims=[2,3])))  # rot180
+  out = (s1 + s2 + s3 + s4) / 4.0
+
+--- Per-Backbone Val AUC (TTA-4, best stage, from attempt_23 training) ---
+
+  DenseNet121:    0.8332  (Stage 2)
+  DenseNet169:    0.8415  (Stage 2)
+  ResNeXt50:      0.8549  (Stage 2)  ← best single model
+  SE-ResNeXt50:   0.8341  (Stage 2)
+
+--- Ensemble ---
+
+Grid search over all 2/3/4-backbone combinations and discrete weights
+{0.10, 0.15, 0.20, ..., 0.80} on the 500-image val set.
+Best result: 3-backbone weighted mean
+  DenseNet121 × 0.35  +  DenseNet169 × 0.15  +  ResNeXt50 × 0.50
+  Val AUC: 0.8671
+  SE-ResNeXt50 excluded — every 3-backbone combination involving it scored below
+  the DenseNet121 + DenseNet169 + ResNeXt50 blend.
+
+--- Key Design Decisions (C-series changes in attempt_23/24) ---
+
+(C-5)  Input resolution 224px → 380px.
+       Microaneurysms are the earliest DR lesion (10–125 μm diameter). At 224px they
+       are ~2px wide — below the reliable detection threshold of 3×3 conv filters.
+       At 380px they are ~3–4px. Backbones are fully convolutional, so resolution
+       change requires no architectural modification. Batch sizes reduced to 32/128
+       to stay within GPU memory at larger feature maps.
+       Scientific backing: Abramoff et al. (npj Digital Medicine, 2018) show that
+       resolution is the primary driver of sensitivity for early DR lesion detection.
+       Kaggle APTOS 2019 winning solutions uniformly used 380–456px inputs.
+
+(C-6)  Rotation augmentation ±15° → ±180°.
+       Fundus cameras can be held at any orientation; there is no canonical up/down.
+       The previous ±15° window kept only 8% of the rotation space, artificially
+       constraining training diversity. Full 360° rotation is a valid augmentation
+       for every retinal image in the dataset.
+       Scientific backing: Graham (Kaggle DR 2015 winner, 35k images) identified
+       full 360° rotation as the single most important augmentation for fundus DR.
+       Gargeya & Leng (Ophthalmology, 2017; ~1.7k training images, similar scale)
+       also found random 360° rotation consistently improved AUC.
+
+(C-7)  Load pre-trained backbone weights from attempt_23 (no retraining in attempt_24).
+       All four backbones trained once at 380px / ±180°; attempt_24 performs only
+       inference, ensemble grid search, and test score generation.
+
+
+===========================================================================
+FAILED FT APPROACHES
+===========================================================================
+
+The following directions were explored and abandoned. Each entry explains
+what was tried, what happened, and the root cause where known.
+
+--- Optimiser and Scheduler ---
+
+1. SGD + StepLR (first_attempt through third_attempt EfficientNet-B0)
+   What:     SGD with momentum=0.9, StepLR(step_size=7, gamma=0.1).
+   Outcome:  Ceiling at 0.751 pub (attempt_with_c) after switching to AdamW+Cosine.
+             Baseline SGD stalled at 0.698 pub.
+   Why it failed: SGD requires careful momentum / weight decay tuning that is
+             backbone-specific. AdamW's adaptive learning rates and decoupled
+             weight decay are more robust for transfer learning on small datasets
+             where different parameter groups have very different gradient scales.
+
+--- Preprocessing Mistakes ---
+
+2. CLAHE preprocessing — attempt_with_a_b
+   What:     Contrast-limited adaptive histogram equalisation (LAB L-channel,
+             clipLimit=2.0) inserted before CropByEye.
+   Outcome:  0.711 pub public gain but 0.691 private — lower private than baseline.
+   Why it failed: CLAHE alters the global intensity distribution. CropByEye uses a
+             fixed threshold (0.10) on raw pixel intensity to detect the eye boundary.
+             After CLAHE the background may exceed the threshold, producing incorrect
+             crops and a noisier training set. Permanently banned.
+
+3. BenGraham without uint8 guard — fourth_attempt (catastrophic)
+   What:     BenGraham formula applied to uint8 images without checking dtype.
+   Outcome:  0.558 pub / 0.533 priv — near-random performance.
+   Why it failed: np.clip(uint8_array, 0, 1) clamps every non-zero pixel to 1.
+             The weighted subtraction then maps every pixel to neutral gray 128.
+             Training proceeds on a dataset of 2000 identical gray images.
+
+--- Data Pipeline ---
+
+4. Pre-cached image pipeline — second_attempt_tuned_cache
+   What:     Images preprocessed and saved to disk at 224px. DataLoader reads
+             .npy arrays directly, skipping CropByEye, BenGraham, and Rescale at
+             train time. CenterCrop(224) used at cache creation → RandomCrop never called.
+   Outcome:  0.742 pub (−0.028 regression vs tuned baseline).
+   Why it failed: Per-epoch RandomCrop provides 32px of positional jitter in both
+             axes. On a 2000-image training set this is the primary spatial regulariser.
+             Removing it causes the model to converge faster to a lower peak.
+             EfficientNet Stage 1 best val AUC: 0.748 (epoch 3) vs 0.779 (epoch 14).
+
+5. 2-pass TTA only (second_attempt through fourth_attempt)
+   What:     TTA limited to horizontal flip (score = mean of orig + hflip).
+   Outcome:  AUC consistently lower than 4-pass TTA introduced in fifth_attempt.
+   Why it failed: vflip and rot180 add meaningful inference diversity at no training
+             cost. Fundus images have no strong vertical orientation prior, so vflip
+             at inference is valid. 4-pass TTA is strictly better on this dataset.
+
+--- Architecture Decisions ---
+
+6. EfficientNet-B0 with three unfrozen blocks (features[6,7,8]) — attempt_with_c through fifth_attempt
+   What:     EfficientNet-B0's compound-scaled architecture, unfreezing the top three
+             feature blocks. Single-stage and two-stage variants both tested.
+   Outcome:  Best EfficientNet result: 0.770 pub / 0.744 priv (second_attempt_tuned).
+             DenseNet121 exceeded this by +0.011 pub / +0.037 priv in sixth_attempt.
+   Why it failed: EfficientNet-B0 Stage 1 reached train AUC 0.919 at its best val
+             checkpoint in fifth_attempt. Stage 2 memorised further (train AUC → 1.000)
+             while val stagnated. 2000 training images are insufficient to regularise
+             EfficientNet's compound-scaled architecture. DenseNet's dense connections
+             provide stronger implicit regularisation through feature reuse.
+
+7. DenseNet Stage 3 unfreeze — seventh_attempt
+   What:     Extended progressive unfreezing to denseblock2 + transition2 (third stage).
+   Outcome:  0.768 pub / 0.754 priv (−0.013 pub vs sixth_attempt two-stage).
+   Why it failed: Two stages already unfreeze ~5.5M of DenseNet121's 6.95M parameters.
+             Stage 3 adds further params that overfit on 2000 training images without
+             introducing new representational capacity. Stages 1+2 are the optimal
+             stopping point.
+
+8. 8-pass TTA with rot90/rot270 — seventh_attempt
+   What:     Extended 4-pass TTA with two additional 90°-rotation passes.
+   Outcome:  AUC decreased for both FT and custom models vs 4-pass TTA.
+   Why it failed: The BenGraham + rectangular crop pipeline is not invariant to 90°
+             rotations. Images rotated 90° at inference fall outside the training
+             distribution (all training images are upright within ±180°). The
+             miscalibrated predictions from the rot90/rot270 passes degrade the mean.
+
+9. EfficientNet-B4-NS as 5th backbone — attempt_23
+   What:     tf_efficientnet_b4_ns (Noisy Student pretrained, via timm; feature dim = 1792)
+             at 380px input. Stage 1 unfreezes blocks[6] + conv_head + bn2.
+             Stage 2 additionally unfreezes blocks[5].
+   Outcome:  CUDA OOM. 14.56 GiB GPU fully saturated at batch=16, 380px.
+             Gradient checkpointing and batch size reductions did not resolve it.
+   Why it failed: EfficientNet-B4 is substantially larger than B0. At 380px input the
+             feature maps at each stage require too much GPU memory for a single-GPU
+             setup. Scientific motivation was valid (APTOS 2019 top-10 used B3–B7),
+             but hardware constraints make it incompatible with this setup.
+
+10. SE-ResNeXt50 in final ensemble — attempt_24 grid search
+    What:     All 4-backbone combinations including SE-ResNeXt50 were tested.
+    Outcome:  Every 3-backbone blend containing SE-ResNeXt50 scored below the
+              DenseNet121 + DenseNet169 + ResNeXt50 combination (val 0.8671).
+    Why it failed: SE-ResNeXt50 val AUC (0.8341) is lower than ResNeXt50 (0.8549),
+              and its predictions are positively correlated with ResNeXt50 (both are
+              resnext family). Adding a weaker, correlated model dilutes the ensemble
+              without adding complementary diversity.
+
+
+===========================================================================
+SUMMARY TABLE (FINE-TUNING category, valid submissions only)
+===========================================================================
+
+Notebook                    | Pub AUC | Priv AUC | Key FT change
+----------------------------|---------|----------|------------------------------------------
+first_attempt               |  0.698  |  0.708   | EfficientNet-B0 + SGD baseline
+attempt_with_b              |  0.691  |  0.693   | No FT change (custom-only edit)
+attempt_with_a_b            |  0.711  |  0.691   | CLAHE (corrupts CropByEye)
+attempt_with_c              |  0.751  |  0.734   | AdamW + CosineAnnealingLR
+second_attempt              |  0.742  |  0.727   | 2-stage unfreezing + TTA-2 + ensemble
+second_attempt_tuned        |  0.770  |  0.744   | WeightedRandomSampler
+second_attempt_tuned_cache  |  0.742  |  0.728   | Cache kills RandomCrop (regression)
+third_attempt               |  0.766  |  0.743   | ResizedCrop + label smoothing ε=0.05
+fourth_attempt              |  0.558  |  0.533   | BenGraham dtype bug (gray images)
+fifth_attempt               |  0.757  |  0.755   | BenGraham fixed + 4-pass TTA + LS
+seventh_attempt             |  0.768  |  0.754   | DenseNet Stage 3 (overfits, reverted)
+attempt_22 (eighth)         |  0.780  |  0.791   | ResNet50 (IMAGENET1K_V2)
+attempt_21 (ninth)          |  0.806  |  0.807   | 4-backbone ensemble at 224px
+*** attempt_24 (tenth) ***  |  0.835  |  0.826   | 3-backbone ensemble at 380px (BEST)
