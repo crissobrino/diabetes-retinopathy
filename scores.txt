@@ -38,10 +38,30 @@ fourth_attempt.ipynb:
 Scores:
 {'AUC_custom': 0.5408791534456417, 'AUC_ft': 0.557485271650546, 'AUC_custom_half': 0.5574382187423539, 'AUC_ft_half': 0.5326645461218498}
 
-fifth_attempt.ipynb:
+fifth_attempt.ipynb (NOT VALID):
 Scores:
 {'AUC_custom': 0.7698954070031833, 'AUC_ft': 0.7571419082218169, 'AUC_custom_half': 0.7697169888263599, 'AUC_ft_half': 0.7552198026262132}
 
-sixth_attempt.ipynb:
+sixth_attempt.ipynb (NOT VALID):
 Scores:
 {'AUC_custom': 0.7858117326057299, 'AUC_ft': 0.7806612811747935, 'AUC_custom_half': 0.7865386183834923, 'AUC_ft_half': 0.7805032215969333}
+
+seventh_attempt.ipynb:
+Scores:
+{'AUC_custom': 0.7562886092248264, 'AUC_ft': 0.7684085207269903, 'AUC_custom_half': 0.7623970312372563, 'AUC_ft_half': 0.754139140363755}
+
+eighth_attempt.ipynb: (custom part only, the ft is from cris's notebook attempt_22.ipynb)
+Scores:
+{'AUC_custom': 0.7564112390208011, 'AUC_ft': 0.7800123651710942, 'AUC_custom_half': 0.763742761601827, 'AUC_ft_half': 0.7913506239295326}
+
+ninth_attempt.ipynb: (custom from ninth, the ft is from ninth cris's notebook, attempt_23.ipynb)
+Scores:
+{'AUC_custom': 0.7568813199053707, 'AUC_ft': 0.8063522234314883, 'AUC_custom_half': 0.7802789332028383, 'AUC_ft_half': 0.8073770491803278}
+
+tenth_attempt.ipynb: (custom only, the ft is from tenth' cris's notebook attempt_24.ipynb)
+Scores:
+{'AUC_custom': 0.7600901329000413, 'AUC_ft': 0.83510891058755, 'AUC_custom_half': 0.7725103988255444, 'AUC_ft_half': 0.8260133757442297}
+
+tenth_extension_attempt.ipynb: (custom only (ensemble with 3 archs), the ft is from tenth' cris's notebook attempt_24.ipynb)
+Scores:
+{'AUC_custom': 0.7601514477980288, 'AUC_ft': 0.83510891058755, 'AUC_custom_half': 0.7723880597014925, 'AUC_ft_half': 0.8260133757442297}
