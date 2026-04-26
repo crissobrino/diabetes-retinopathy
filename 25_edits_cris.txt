@@ -1,0 +1,58 @@
+Edits and implementations by Cris - 26/04
+==========================================
+
+----------------------------------------------------------------------
+25. attempt_25.ipynb -- Experiments C-8, C-9
+    *** TO BE SUBMITTED ***
+----------------------------------------------------------------------
+Changes vs attempt_24.ipynb:
+
+- (C-8) 5-fold cross-validation ensemble of ResNeXt50.
+  StratifiedKFold(n_splits=5) on combined train.csv + val.csv (2500 images).
+  Each fold trains one ResNeXt50 independently with the same 2-stage progressive
+  unfreezing strategy as attempt_24 (380px, ±180° rotation, AdamW, label
+  smoothing ε=0.05). Final FT prediction = simple average of all 5 fold models.
+
+  Scientific backing: Breiman ("Bagging Predictors", 1996) shows variance
+  reduction of ~1/√K for K independent models trained on overlapping splits.
+  Every APTOS 2019 top-10 solution used multi-fold training; the consensus in
+  competition medical imaging is that fold ensembles give +0.5–2pp AUC for
+  free on small datasets. ResNeXt50 is the best single backbone (val AUC
+  0.8549 in attempt_24), so 5 fold models are expected to match or beat the
+  3-backbone ensemble (val AUC 0.8671).
+
+  OOF (out-of-fold) val AUC gives an unbiased estimate of generalisation:
+  each image appears in the val fold exactly once, so no data is wasted.
+  5 × training time (~3–4 hours on T4).
+
+- (C-9) Extended 6-pass TTA (applied in get_val_scores and get_test_scores).
+  Original 4-pass TTA (orig + hflip + vflip + rot180) extended with:
+    s5 = model(rot90 (inputs, k=1))   # +90°
+    s6 = model(rot90 (inputs, k=3))   # +270°
+    out = (s1+s2+s3+s4+s5+s6) / 6.0
+
+  Fundus images are rotationally symmetric; any rotation is a valid fundus
+  image. More TTA passes reduce score variance. Wong et al. (arXiv 2023,
+  "Test-Time Augmentation for Medical Image Analysis") report +0.2–0.5pp AUC
+  on rotationally symmetric medical images when TTA passes are increased.
+  This change costs no training time — only inference passes.
+
+  With 5 folds × 6 TTA passes = 30 effective passes per test image
+  (vs 4 in attempt_24).
+
+- FoldDataset class added: builds a PyTorch Dataset directly from a DataFrame
+  slice, enabling per-fold train/val splits without writing temp CSV files.
+
+- build_resnext50() replaces the generic build_ft_model(): standalone function
+  returning the model and its Stage 1 / Stage 2 unfreezing and param-group fns.
+
+Per-fold expected val AUC (TTA-6, to be filled after training):
+  Fold 1:  TBD
+  Fold 2:  TBD
+  Fold 3:  TBD
+  Fold 4:  TBD
+  Fold 5:  TBD
+
+Results: OOF val AUC: TBD
+         Codabench FT AUC: TBD
+         (vs attempt_24 ensemble: 0.8671 val / 0.830 Codabench)

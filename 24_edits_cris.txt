@@ -3,7 +3,7 @@ Edits and implementations by Cris - 25/04
 
 ----------------------------------------------------------------------
 24. attempt_24.ipynb -- Experiments C-5, C-6 (attempt_23 without B4)
-    *** TO BE SUBMITTED ***
+    *** SUBMITTED ***
 ----------------------------------------------------------------------
 Changes vs attempt_21.ipynb:
 
@@ -44,4 +44,18 @@ Changes vs attempt_21.ipynb:
 - TRAIN_BATCH=32, VAL_BATCH=128 (from 64/256) for safe 380px operation.
 - FT models kept on CPU; moved to GPU one at a time during scoring.
 
-Results: TBD
+Per-backbone val AUC (TTA-4, best stage):
+  DenseNet121:    0.8332  (S2)
+  DenseNet169:    0.8415  (S2)
+  ResNeXt50:      0.8549  (S2)  ← best single model
+  SE-ResNeXt50:   0.8341  (S2)
+
+Best ensemble (grid search on val):
+  Models:  DenseNet121 (0.35) + DenseNet169 (0.15) + ResNeXt50 (0.50)
+  Val AUC: 0.8671
+  Note: SE-ResNeXt50 excluded by the grid search — the 3-backbone
+  combination outperformed all 4-backbone blends on the val set.
+
+Results: val AUC:        0.8671  (3-backbone ensemble)
+         Codabench FT AUC: 0.830
+         (vs attempt_21 ensemble: 0.810, +0.020 improvement)

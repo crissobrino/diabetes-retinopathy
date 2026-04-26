@@ -1,0 +1,691 @@
+================================================================================
+Training backbone: densenet121
+================================================================================
+Downloading: "https://download.pytorch.org/models/densenet121-a639ec97.pth" to /root/.cache/torch/hub/checkpoints/densenet121-a639ec97.pth
+100%|██████████| 30.8M/30.8M [00:00<00:00, 215MB/s]
+densenet121 Stage 1 trainable: 2,161,153 / 6,954,881
+Epoch 0/29
+----------
+train Loss: 1.0742  AUC: 0.6372
+val Loss: 0.9137  AUC: 0.7347
+
+Epoch 1/29
+----------
+train Loss: 0.9595  AUC: 0.7488
+val Loss: 1.0220  AUC: 0.7615
+
+Epoch 2/29
+----------
+train Loss: 0.9273  AUC: 0.7736
+val Loss: 1.0928  AUC: 0.7730
+
+Epoch 3/29
+----------
+train Loss: 0.8649  AUC: 0.8150
+val Loss: 0.8994  AUC: 0.7871
+
+Epoch 4/29
+----------
+train Loss: 0.8306  AUC: 0.8397
+val Loss: 0.9089  AUC: 0.8026
+
+Epoch 5/29
+----------
+train Loss: 0.8177  AUC: 0.8458
+val Loss: 0.8944  AUC: 0.7886
+
+Epoch 6/29
+----------
+train Loss: 0.8351  AUC: 0.8370
+val Loss: 0.9607  AUC: 0.8195
+
+Epoch 7/29
+----------
+train Loss: 0.7909  AUC: 0.8603
+val Loss: 0.8381  AUC: 0.8008
+
+Epoch 8/29
+----------
+train Loss: 0.7515  AUC: 0.8821
+val Loss: 0.9451  AUC: 0.7885
+
+Epoch 9/29
+----------
+train Loss: 0.7260  AUC: 0.8908
+val Loss: 0.8696  AUC: 0.7883
+
+Epoch 10/29
+----------
+train Loss: 0.7413  AUC: 0.8832
+val Loss: 0.9474  AUC: 0.7912
+
+Epoch 11/29
+----------
+train Loss: 0.7183  AUC: 0.8953
+val Loss: 0.9786  AUC: 0.7925
+
+Epoch 12/29
+----------
+train Loss: 0.6826  AUC: 0.9113
+val Loss: 0.9499  AUC: 0.7974
+
+Epoch 13/29
+----------
+train Loss: 0.7247  AUC: 0.8913
+val Loss: 0.8273  AUC: 0.8057
+Early stopping: no improvement for 7 epochs.
+Saved: /kaggle/working/best_densenet121_s1.pth
+densenet121 Stage 1  --  val AUC: 0.8195
+densenet121 Stage 1 (TTA-4)  --  val AUC: 0.8267
+densenet121: Stage 1 passed gate. Running Stage 2...
+densenet121 Stage 2 trainable: 5,525,249
+Epoch 0/14
+----------
+train Loss: 0.7941  AUC: 0.8606
+val Loss: 0.8806  AUC: 0.8146
+
+Epoch 1/14
+----------
+train Loss: 0.7436  AUC: 0.8861
+val Loss: 0.9924  AUC: 0.8121
+
+Epoch 2/14
+----------
+train Loss: 0.7756  AUC: 0.8692
+val Loss: 0.8926  AUC: 0.8149
+
+Epoch 3/14
+----------
+train Loss: 0.7552  AUC: 0.8783
+val Loss: 0.8648  AUC: 0.8120
+
+Epoch 4/14
+----------
+train Loss: 0.7409  AUC: 0.8832
+val Loss: 0.9255  AUC: 0.8105
+
+Epoch 5/14
+----------
+train Loss: 0.6778  AUC: 0.9166
+val Loss: 0.8594  AUC: 0.8110
+
+Epoch 6/14
+----------
+train Loss: 0.6998  AUC: 0.9043
+val Loss: 0.8507  AUC: 0.8218
+
+Epoch 7/14
+----------
+train Loss: 0.6784  AUC: 0.9113
+val Loss: 0.8386  AUC: 0.8121
+
+Epoch 8/14
+----------
+train Loss: 0.6541  AUC: 0.9236
+val Loss: 0.8005  AUC: 0.8169
+
+Epoch 9/14
+----------
+train Loss: 0.6687  AUC: 0.9156
+val Loss: 0.8443  AUC: 0.8054
+
+Epoch 10/14
+----------
+train Loss: 0.6514  AUC: 0.9239
+val Loss: 0.8758  AUC: 0.8070
+
+Epoch 11/14
+----------
+train Loss: 0.6382  AUC: 0.9265
+val Loss: 0.8535  AUC: 0.8113
+Early stopping: no improvement for 5 epochs.
+densenet121 Stage 2 (TTA-4)  --  val AUC: 0.8332
+densenet121: Stage 2 better (0.8332 > 0.8267)
+Saved: /kaggle/working/best_densenet121_s2.pth
+
+================================================================================
+Training backbone: densenet169
+================================================================================
+Downloading: "https://download.pytorch.org/models/densenet169-b2777c0a.pth" to /root/.cache/torch/hub/checkpoints/densenet169-b2777c0a.pth
+100%|██████████| 54.7M/54.7M [00:00<00:00, 80.4MB/s]
+densenet169 Stage 1 trainable: 5,918,593 / 12,486,145
+Epoch 0/29
+----------
+train Loss: 0.9960  AUC: 0.7076
+val Loss: 0.9912  AUC: 0.7582
+
+Epoch 1/29
+----------
+train Loss: 0.8961  AUC: 0.7947
+val Loss: 0.8329  AUC: 0.7945
+
+Epoch 2/29
+----------
+train Loss: 0.8578  AUC: 0.8207
+val Loss: 0.8817  AUC: 0.7893
+
+Epoch 3/29
+----------
+train Loss: 0.8048  AUC: 0.8530
+val Loss: 1.0753  AUC: 0.7852
+
+Epoch 4/29
+----------
+train Loss: 0.7945  AUC: 0.8584
+val Loss: 1.0370  AUC: 0.8011
+
+Epoch 5/29
+----------
+train Loss: 0.7827  AUC: 0.8646
+val Loss: 1.0287  AUC: 0.8089
+
+Epoch 6/29
+----------
+train Loss: 0.7237  AUC: 0.8929
+val Loss: 0.7824  AUC: 0.7997
+
+Epoch 7/29
+----------
+train Loss: 0.6835  AUC: 0.9092
+val Loss: 0.8818  AUC: 0.8093
+
+Epoch 8/29
+----------
+train Loss: 0.7049  AUC: 0.8986
+val Loss: 0.8135  AUC: 0.8080
+
+Epoch 9/29
+----------
+train Loss: 0.6760  AUC: 0.9113
+val Loss: 0.8899  AUC: 0.8020
+
+Epoch 10/29
+----------
+train Loss: 0.6610  AUC: 0.9194
+val Loss: 0.8011  AUC: 0.8022
+
+Epoch 11/29
+----------
+train Loss: 0.6416  AUC: 0.9258
+val Loss: 0.8470  AUC: 0.8025
+
+Epoch 12/29
+----------
+train Loss: 0.6101  AUC: 0.9357
+val Loss: 0.7814  AUC: 0.8179
+
+Epoch 13/29
+----------
+train Loss: 0.6036  AUC: 0.9379
+val Loss: 0.8745  AUC: 0.7981
+
+Epoch 14/29
+----------
+train Loss: 0.5472  AUC: 0.9567
+val Loss: 0.8200  AUC: 0.8100
+
+Epoch 15/29
+----------
+train Loss: 0.5496  AUC: 0.9535
+val Loss: 1.0062  AUC: 0.8001
+
+Epoch 16/29
+----------
+train Loss: 0.5375  AUC: 0.9567
+val Loss: 0.9327  AUC: 0.8081
+
+Epoch 17/29
+----------
+train Loss: 0.5263  AUC: 0.9601
+val Loss: 0.9919  AUC: 0.7949
+
+Epoch 18/29
+----------
+train Loss: 0.5015  AUC: 0.9654
+val Loss: 0.8470  AUC: 0.7983
+
+Epoch 19/29
+----------
+train Loss: 0.4659  AUC: 0.9743
+val Loss: 0.8435  AUC: 0.8117
+Early stopping: no improvement for 7 epochs.
+Saved: /kaggle/working/best_densenet169_s1.pth
+densenet169 Stage 1  --  val AUC: 0.8179
+densenet169 Stage 1 (TTA-4)  --  val AUC: 0.8328
+densenet169: Stage 1 passed gate. Running Stage 2...
+densenet169 Stage 2 trainable: 11,056,513
+Epoch 0/14
+----------
+train Loss: 0.5795  AUC: 0.9466
+val Loss: 0.7900  AUC: 0.8118
+
+Epoch 1/14
+----------
+train Loss: 0.5497  AUC: 0.9544
+val Loss: 0.8044  AUC: 0.8076
+
+Epoch 2/14
+----------
+train Loss: 0.5715  AUC: 0.9474
+val Loss: 0.8159  AUC: 0.8120
+
+Epoch 3/14
+----------
+train Loss: 0.5527  AUC: 0.9539
+val Loss: 0.7707  AUC: 0.8201
+
+Epoch 4/14
+----------
+train Loss: 0.5093  AUC: 0.9658
+val Loss: 0.7672  AUC: 0.8276
+
+Epoch 5/14
+----------
+train Loss: 0.5043  AUC: 0.9657
+val Loss: 0.8114  AUC: 0.8214
+
+Epoch 6/14
+----------
+train Loss: 0.5080  AUC: 0.9659
+val Loss: 0.7878  AUC: 0.8253
+
+Epoch 7/14
+----------
+train Loss: 0.4960  AUC: 0.9681
+val Loss: 0.7930  AUC: 0.8239
+
+Epoch 8/14
+----------
+train Loss: 0.4904  AUC: 0.9703
+val Loss: 0.8219  AUC: 0.8180
+
+Epoch 9/14
+----------
+train Loss: 0.4829  AUC: 0.9711
+val Loss: 0.7933  AUC: 0.8236
+Early stopping: no improvement for 5 epochs.
+densenet169 Stage 2 (TTA-4)  --  val AUC: 0.8415
+densenet169: Stage 2 better (0.8415 > 0.8328)
+Saved: /kaggle/working/best_densenet169_s2.pth
+
+================================================================================
+Training backbone: resnext50
+================================================================================
+Downloading: "https://download.pytorch.org/models/resnext50_32x4d-1a0047aa.pth" to /root/.cache/torch/hub/checkpoints/resnext50_32x4d-1a0047aa.pth
+100%|██████████| 95.8M/95.8M [00:00<00:00, 242MB/s]
+resnext50 Stage 1 trainable: 14,546,945 / 22,981,953
+Epoch 0/29
+----------
+train Loss: 1.0144  AUC: 0.6816
+val Loss: 1.4156  AUC: 0.7674
+
+Epoch 1/29
+----------
+train Loss: 0.8750  AUC: 0.8116
+val Loss: 0.8381  AUC: 0.8001
+
+Epoch 2/29
+----------
+train Loss: 0.8085  AUC: 0.8511
+val Loss: 1.1518  AUC: 0.8025
+
+Epoch 3/29
+----------
+train Loss: 0.7343  AUC: 0.8886
+val Loss: 0.8487  AUC: 0.8017
+
+Epoch 4/29
+----------
+train Loss: 0.7176  AUC: 0.8949
+val Loss: 0.7744  AUC: 0.7999
+
+Epoch 5/29
+----------
+train Loss: 0.6791  AUC: 0.9112
+val Loss: 1.2431  AUC: 0.8139
+
+Epoch 6/29
+----------
+train Loss: 0.6091  AUC: 0.9366
+val Loss: 0.8040  AUC: 0.8132
+
+Epoch 7/29
+----------
+train Loss: 0.5891  AUC: 0.9438
+val Loss: 0.8563  AUC: 0.7986
+
+Epoch 8/29
+----------
+train Loss: 0.5611  AUC: 0.9534
+val Loss: 0.9117  AUC: 0.8006
+
+Epoch 9/29
+----------
+train Loss: 0.5446  AUC: 0.9563
+val Loss: 0.9389  AUC: 0.7962
+
+Epoch 10/29
+----------
+train Loss: 0.5078  AUC: 0.9661
+val Loss: 0.9997  AUC: 0.8099
+
+Epoch 11/29
+----------
+train Loss: 0.4819  AUC: 0.9720
+val Loss: 0.9803  AUC: 0.8011
+
+Epoch 12/29
+----------
+train Loss: 0.4687  AUC: 0.9729
+val Loss: 0.7816  AUC: 0.8229
+
+Epoch 13/29
+----------
+train Loss: 0.4632  AUC: 0.9743
+val Loss: 0.7598  AUC: 0.8316
+
+Epoch 14/29
+----------
+train Loss: 0.4062  AUC: 0.9859
+val Loss: 0.8323  AUC: 0.8272
+
+Epoch 15/29
+----------
+train Loss: 0.3996  AUC: 0.9869
+val Loss: 0.8823  AUC: 0.8028
+
+Epoch 16/29
+----------
+train Loss: 0.3917  AUC: 0.9872
+val Loss: 0.7809  AUC: 0.8247
+
+Epoch 17/29
+----------
+train Loss: 0.3666  AUC: 0.9906
+val Loss: 0.8566  AUC: 0.8226
+
+Epoch 18/29
+----------
+train Loss: 0.3652  AUC: 0.9913
+val Loss: 0.7663  AUC: 0.8360
+
+Epoch 19/29
+----------
+train Loss: 0.3539  AUC: 0.9932
+val Loss: 0.7806  AUC: 0.8321
+
+Epoch 20/29
+----------
+train Loss: 0.3623  AUC: 0.9912
+val Loss: 0.7411  AUC: 0.8459
+
+Epoch 21/29
+----------
+train Loss: 0.3503  AUC: 0.9927
+val Loss: 0.7526  AUC: 0.8408
+
+Epoch 22/29
+----------
+train Loss: 0.3319  AUC: 0.9954
+val Loss: 0.7563  AUC: 0.8366
+
+Epoch 23/29
+----------
+train Loss: 0.3319  AUC: 0.9948
+val Loss: 0.7537  AUC: 0.8367
+
+Epoch 24/29
+----------
+train Loss: 0.3207  AUC: 0.9961
+val Loss: 0.7538  AUC: 0.8369
+
+Epoch 25/29
+----------
+train Loss: 0.3215  AUC: 0.9954
+val Loss: 0.7673  AUC: 0.8348
+
+Epoch 26/29
+----------
+train Loss: 0.3085  AUC: 0.9965
+val Loss: 0.7684  AUC: 0.8340
+
+Epoch 27/29
+----------
+train Loss: 0.3175  AUC: 0.9962
+val Loss: 0.7606  AUC: 0.8371
+Early stopping: no improvement for 7 epochs.
+Saved: /kaggle/working/best_resnext50_s1.pth
+resnext50 Stage 1  --  val AUC: 0.8459
+resnext50 Stage 1 (TTA-4)  --  val AUC: 0.8542
+resnext50: Stage 1 passed gate. Running Stage 2...
+resnext50 Stage 2 trainable: 21,569,537
+Epoch 0/14
+----------
+train Loss: 0.3326  AUC: 0.9945
+val Loss: 0.7400  AUC: 0.8457
+
+Epoch 1/14
+----------
+train Loss: 0.3319  AUC: 0.9951
+val Loss: 0.7607  AUC: 0.8401
+
+Epoch 2/14
+----------
+train Loss: 0.3321  AUC: 0.9952
+val Loss: 0.7476  AUC: 0.8459
+
+Epoch 3/14
+----------
+train Loss: 0.3231  AUC: 0.9959
+val Loss: 0.7676  AUC: 0.8403
+
+Epoch 4/14
+----------
+train Loss: 0.3196  AUC: 0.9968
+val Loss: 0.7601  AUC: 0.8418
+
+Epoch 5/14
+----------
+train Loss: 0.3138  AUC: 0.9963
+val Loss: 0.7659  AUC: 0.8384
+
+Epoch 6/14
+----------
+train Loss: 0.3234  AUC: 0.9959
+val Loss: 0.7674  AUC: 0.8382
+
+Epoch 7/14
+----------
+train Loss: 0.3058  AUC: 0.9965
+val Loss: 0.7773  AUC: 0.8351
+Early stopping: no improvement for 5 epochs.
+resnext50 Stage 2 (TTA-4)  --  val AUC: 0.8549
+resnext50: Stage 2 better (0.8549 > 0.8542)
+Saved: /kaggle/working/best_resnext50_s2.pth
+
+================================================================================
+Training backbone: seresnext50
+================================================================================
+model.safetensors: 100%
+ 111M/111M [00:04<00:00, 529MB/s]
+seresnext50 Stage 1 trainable: 16,126,337 / 25,512,945
+Epoch 0/29
+----------
+train Loss: 1.0646  AUC: 0.6173
+val Loss: 1.0060  AUC: 0.7362
+
+Epoch 1/29
+----------
+train Loss: 0.9039  AUC: 0.7833
+val Loss: 1.3487  AUC: 0.7610
+
+Epoch 2/29
+----------
+train Loss: 0.9078  AUC: 0.7844
+val Loss: 1.0756  AUC: 0.8008
+
+Epoch 3/29
+----------
+train Loss: 0.8133  AUC: 0.8496
+val Loss: 0.7776  AUC: 0.8162
+
+Epoch 4/29
+----------
+train Loss: 0.7796  AUC: 0.8681
+val Loss: 1.1829  AUC: 0.8120
+
+Epoch 5/29
+----------
+train Loss: 0.7470  AUC: 0.8814
+val Loss: 0.9199  AUC: 0.8006
+
+Epoch 6/29
+----------
+train Loss: 0.6797  AUC: 0.9107
+val Loss: 0.7984  AUC: 0.8193
+
+Epoch 7/29
+----------
+train Loss: 0.6619  AUC: 0.9168
+val Loss: 0.7526  AUC: 0.8268
+
+Epoch 8/29
+----------
+train Loss: 0.6025  AUC: 0.9370
+val Loss: 0.8415  AUC: 0.8175
+
+Epoch 9/29
+----------
+train Loss: 0.6057  AUC: 0.9355
+val Loss: 0.8108  AUC: 0.8246
+
+Epoch 10/29
+----------
+train Loss: 0.5588  AUC: 0.9493
+val Loss: 1.0000  AUC: 0.8202
+
+Epoch 11/29
+----------
+train Loss: 0.5383  AUC: 0.9547
+val Loss: 0.9173  AUC: 0.7997
+
+Epoch 12/29
+----------
+train Loss: 0.5313  AUC: 0.9571
+val Loss: 0.8463  AUC: 0.8077
+
+Epoch 13/29
+----------
+train Loss: 0.4940  AUC: 0.9660
+val Loss: 0.8388  AUC: 0.8110
+
+Epoch 14/29
+----------
+train Loss: 0.4682  AUC: 0.9718
+val Loss: 0.8458  AUC: 0.8168
+Early stopping: no improvement for 7 epochs.
+Saved: /kaggle/working/best_seresnext50_s1.pth
+seresnext50 Stage 1  --  val AUC: 0.8268
+seresnext50 Stage 1 (TTA-4)  --  val AUC: 0.8299
+seresnext50: Stage 1 passed gate. Running Stage 2...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+seresnext50 Stage 2 trainable: 23,941,889
+Epoch 0/14
+----------
+train Loss: 0.6483  AUC: 0.9227
+val Loss: 0.7394  AUC: 0.8294
+
+Epoch 1/14
+----------
+train Loss: 0.6295  AUC: 0.9292
+val Loss: 0.7379  AUC: 0.8287
+
+Epoch 2/14
+----------
+train Loss: 0.5829  AUC: 0.9444
+val Loss: 0.7446  AUC: 0.8299
+
+Epoch 3/14
+----------
+train Loss: 0.5863  AUC: 0.9414
+val Loss: 0.8177  AUC: 0.8242
+
+Epoch 4/14
+----------
+train Loss: 0.5714  AUC: 0.9476
+val Loss: 0.8028  AUC: 0.8215
+
+Epoch 5/14
+----------
+train Loss: 0.5242  AUC: 0.9613
+val Loss: 0.8446  AUC: 0.8179
+
+Epoch 6/14
+----------
+train Loss: 0.5287  AUC: 0.9579
+val Loss: 0.8472  AUC: 0.8139
+
+Epoch 7/14
+----------
+train Loss: 0.5396  AUC: 0.9569
+val Loss: 0.8070  AUC: 0.8155
+Early stopping: no improvement for 5 epochs.
+seresnext50 Stage 2 (TTA-4)  --  val AUC: 0.8341
+seresnext50: Stage 2 better (0.8341 > 0.8299)
+Saved: /kaggle/working/best_seresnext50_s2.pth
+
+=============== ENSEMBLES ==================================
+
+Searching combo: ('densenet121', 'densenet169')
+  NEW BEST: {'models': ('densenet121', 'densenet169'), 'weights': {'densenet121': 0.1, 'densenet169': 0.9}, 'auc': np.float64(0.8444317120787709)}
+  NEW BEST: {'models': ('densenet121', 'densenet169'), 'weights': {'densenet121': 0.15, 'densenet169': 0.85}, 'auc': np.float64(0.8453229776759188)}
+  NEW BEST: {'models': ('densenet121', 'densenet169'), 'weights': {'densenet121': 0.2, 'densenet169': 0.8}, 'auc': np.float64(0.8467659791189204)}
+  NEW BEST: {'models': ('densenet121', 'densenet169'), 'weights': {'densenet121': 0.25, 'densenet169': 0.75}, 'auc': np.float64(0.8476148034971565)}
+  NEW BEST: {'models': ('densenet121', 'densenet169'), 'weights': {'densenet121': 0.3, 'densenet169': 0.7}, 'auc': np.float64(0.8480392156862744)}
+  NEW BEST: {'models': ('densenet121', 'densenet169'), 'weights': {'densenet121': 0.35, 'densenet169': 0.65}, 'auc': np.float64(0.8480816569051863)}
+  NEW BEST: {'models': ('densenet121', 'densenet169'), 'weights': {'densenet121': 0.4, 'densenet169': 0.6}, 'auc': np.float64(0.8482938629997454)}
+
+Searching combo: ('densenet121', 'resnext50')
+  NEW BEST: {'models': ('densenet121', 'resnext50'), 'weights': {'densenet121': 0.1, 'resnext50': 0.9}, 'auc': np.float64(0.8580341227400051)}
+  NEW BEST: {'models': ('densenet121', 'resnext50'), 'weights': {'densenet121': 0.15, 'resnext50': 0.85}, 'auc': np.float64(0.8594983447924626)}
+  NEW BEST: {'models': ('densenet121', 'resnext50'), 'weights': {'densenet121': 0.2, 'resnext50': 0.8}, 'auc': np.float64(0.8610474492827433)}
+  NEW BEST: {'models': ('densenet121', 'resnext50'), 'weights': {'densenet121': 0.25, 'resnext50': 0.75}, 'auc': np.float64(0.8625753331635684)}
+  NEW BEST: {'models': ('densenet121', 'resnext50'), 'weights': {'densenet121': 0.3, 'resnext50': 0.7}, 'auc': np.float64(0.8634453781512605)}
+  NEW BEST: {'models': ('densenet121', 'resnext50'), 'weights': {'densenet121': 0.35, 'resnext50': 0.65}, 'auc': np.float64(0.8637000254647313)}
+  NEW BEST: {'models': ('densenet121', 'resnext50'), 'weights': {'densenet121': 0.4, 'resnext50': 0.6}, 'auc': np.float64(0.8644427467956879)}
+  NEW BEST: {'models': ('densenet121', 'resnext50'), 'weights': {'densenet121': 0.45, 'resnext50': 0.55}, 'auc': np.float64(0.8649520414226297)}
+
+Searching combo: ('densenet121', 'seresnext50')
+
+Searching combo: ('densenet169', 'resnext50')
+
+Searching combo: ('densenet169', 'seresnext50')
+
+Searching combo: ('resnext50', 'seresnext50')
+
+Searching combo: ('densenet121', 'densenet169', 'resnext50')
+  NEW BEST: {'models': ('densenet121', 'densenet169', 'resnext50'), 'weights': {'densenet121': 0.1, 'densenet169': 0.4, 'resnext50': 0.5}, 'auc': np.float64(0.8651218062982768)}
+  NEW BEST: {'models': ('densenet121', 'densenet169', 'resnext50'), 'weights': {'densenet121': 0.15, 'densenet169': 0.25, 'resnext50': 0.6}, 'auc': np.float64(0.8655886597063067)}
+  NEW BEST: {'models': ('densenet121', 'densenet169', 'resnext50'), 'weights': {'densenet121': 0.15, 'densenet169': 0.3, 'resnext50': 0.55}, 'auc': np.float64(0.8657796451914099)}
+  NEW BEST: {'models': ('densenet121', 'densenet169', 'resnext50'), 'weights': {'densenet121': 0.2, 'densenet169': 0.2, 'resnext50': 0.6000000000000001}, 'auc': np.float64(0.8658645276292336)}
+  NEW BEST: {'models': ('densenet121', 'densenet169', 'resnext50'), 'weights': {'densenet121': 0.2, 'densenet169': 0.25, 'resnext50': 0.55}, 'auc': np.float64(0.8666709107885577)}
+  NEW BEST: {'models': ('densenet121', 'densenet169', 'resnext50'), 'weights': {'densenet121': 0.25, 'densenet169': 0.2, 'resnext50': 0.55}, 'auc': np.float64(0.8668406756642051)}
+  NEW BEST: {'models': ('densenet121', 'densenet169', 'resnext50'), 'weights': {'densenet121': 0.3, 'densenet169': 0.2, 'resnext50': 0.49999999999999994}, 'auc': np.float64(0.8668831168831168)}
+  NEW BEST: {'models': ('densenet121', 'densenet169', 'resnext50'), 'weights': {'densenet121': 0.35, 'densenet169': 0.15, 'resnext50': 0.5}, 'auc': np.float64(0.8671165435871319)}
+
+Searching combo: ('densenet121', 'densenet169', 'seresnext50')
+
+Searching combo: ('densenet121', 'resnext50', 'seresnext50')
+
+Searching combo: ('densenet169', 'resnext50', 'seresnext50')
+
+Searching combo: ('densenet121', 'densenet169', 'resnext50', 'seresnext50')
+
+Best FT ensemble found:
+{'models': ('densenet121', 'densenet169', 'resnext50'), 'weights': {'densenet121': 0.35, 'densenet169': 0.15, 'resnext50': 0.5}, 'auc': np.float64(0.8671165435871319)}
+
+==== FINAL MODEL VALIDATION AUC === 
+Best single FT model: resnext50  AUC=0.8549
+Best FT ensemble AUC: 0.8671
+
+
