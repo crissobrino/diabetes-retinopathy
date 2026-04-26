@@ -1,0 +1,343 @@
+CUSTOM MODEL DEVELOPMENT SUMMARY
+Diabetic Retinopathy Detection — CUSTOM category only
+(fifth_attempt and sixth_attempt excluded as invalid.)
+===========================================================================
+
+
+CHRONOLOGICAL EVOLUTION OF CUSTOM APPROACHES
+=============================================
+
+1. BASELINE: first_attempt.ipynb
+   Model:       CustomNet — 4 conv blocks with 5×5 filters (no padding), flatten
+                64×10×10=6400, FC: 6400→120→84→Dropout(0.5)→1
+   Training:    SGD + StepLR; no BenGraham; no augmentation beyond basic flips
+   Result:      0.570 pub / 0.597 priv
+   Notes:       Establishes the floor. Limited by shallow architecture and no
+                preprocessing specific to fundus images.
+
+--
+
+2. attempt_with_b.ipynb  (Series B)
+   Changes:     Switched CustomNet optimizer to Adam + CosineAnnealingLR
+   Result:      0.558 pub / 0.566 priv
+   Notes:       Slight regression. Adam+cosine alone does not compensate for
+                architectural limitations of the original CustomNet.
+
+--
+
+3. attempt_with_a_b.ipynb  (Series A+B)
+   Changes:     Added CLAHE preprocessing on top of Series B
+   Result:      0.544 pub / 0.562 priv
+   Notes:       CLAHE corrupts the intensity distribution that CropByEye relies
+                on to detect the eye boundary → incorrect crops → performance
+                drop. CLAHE is permanently banned from the pipeline.
+
+--
+
+4. attempt_with_c.ipynb  (Series C)
+   Changes:     EfficientNet-B0 introduced for the FT track. CustomNet unchanged.
+   Result:      0.561 pub / 0.579 priv  (custom track, CustomNet only)
+   Notes:       No meaningful custom improvement; FT track improved significantly.
+
+--
+
+5. second_attempt.ipynb  (Series D–F)
+   Model:       CustomNetV2 — 5 blocks, 3×3 same-padding (channels 3→32→64→128
+                →256→256, bias=False), Global Average Pooling → 256-dim,
+                FC: Dropout(0.2)→128→ReLU→Dropout(0.4)→1. ~1M params.
+   Training:    BenGraham preprocessing introduced (sigmaX=10, circular mask,
+                uint8 guard NOT yet applied → gray-image bug still latent)
+   Result:      0.744 pub / 0.731 priv
+   Notes:       Major jump (+0.17 pub). GAP + deeper channels outperform the
+                original flatten approach. CustomNetV2 becomes the backbone for
+                all subsequent custom models.
+
+--
+
+6. second_attempt_tuned.ipynb
+   Changes:     WeightedRandomSampler added (inverse-frequency weights for 73/27
+                class imbalance)
+   Result:      0.766 pub / 0.743 priv
+   Notes:       +0.022 pub gain purely from rebalancing. Sampler remains in all
+                subsequent runs.
+
+--
+
+7. second_attempt_tuned_cache.ipynb
+   Changes:     Pre-cached 224px images to disk to speed up training
+   Result:      0.736 pub / 0.730 priv  (−0.030 pub regression)
+   Notes:       Cache removes on-the-fly RandomCrop, eliminating per-epoch
+                spatial variation that acts as the primary regulariser on a
+                2000-image dataset. Speed gain not worth the AUC cost.
+                Cache pipeline permanently abandoned.
+
+--
+
+8. third_attempt.ipynb  (Series G)
+   Changes:     TVRandomResizedCrop replacing random crop, label smoothing
+                ε=0.05, T_max=25 for cosine schedule
+   Result:      0.762 pub / 0.742 priv
+   Notes:       Marginal gain vs tuned baseline. ResizedCrop later reverted
+                (less control over scale); label smoothing not retained.
+
+--
+
+9. fourth_attempt.ipynb  (Series H) — CATASTROPHIC FAILURE
+   Changes:     BenGraham preprocessing re-applied but missing uint8 dtype guard
+   Result:      0.541 pub / 0.557 priv  (−0.225 pub regression)
+   Root cause:  Without the guard, numpy clips uint8 values to {0,1} when
+                computing 4*img − 4*GaussianBlur + 128. Every pixel becomes
+                0 or 128, producing uniform gray images. The model trains on
+                noise. Fix: add `if image.dtype == np.uint8` before any
+                float arithmetic on the image. Applied from fifth_attempt onward.
+
+--
+
+10. seventh_attempt.ipynb  (Series J)
+    Model:      SE-CustomNetV2 — adds SEBlock(r=8) after Conv-BN-ReLU in every
+                one of the 5 blocks (~22k extra params). 2-seed ensemble (42+123).
+    Changes:    8-pass TTA (added rot90 variants), DenseNet Stage 3 unfreeze
+                attempted (custom is SE-V2 here)
+    Result:     0.756 pub / 0.762 priv
+    Notes:      SE attention actually regressed vs plain V2 (~0.770 before it
+                was invalidated). 8-TTA with rot90 hurts — distribution shift.
+                Reverted to 4-TTA. SE modules add complexity that overfits
+                on 2000 training images.
+
+--
+
+11. eighth_attempt.ipynb  (Series K)
+    Models:     SE-CustomNetV2 (seed=42) + CustomNetV3 (seed=42), 2-model ensemble
+    CustomNetV3: same channel progression as V2 but with residual connections —
+                ResBlock = Conv3×3→BN + 1×1-projection-skip → ReLU → MaxPool.
+                ~1.05M params.
+    Changes:    4-TTA restored (removed rot90), cudnn.deterministic fix
+    Result:     0.756 pub / 0.764 priv
+    Notes:      Marginal gain over seventh. Both SE attention and residuals add
+                complexity that barely moves the needle on this dataset size.
+                Grid-searched ensemble weight w∈{0.1..0.9} on 500-sample val
+                (later shown to overfit).
+
+--
+
+12. tenth_attempt.ipynb  (Series M)
+    Models:     4-architecture uniform ensemble: CustomNetV2 + SE-CustomNetV2 +
+                CustomNetV3 + SECustomNetV3 (new), all seed=42.
+    SECustomNetV3: SEResBlock = Conv3×3→BN + 1×1-skip → ReLU → SEBlock(r=8)
+                → MaxPool. Combines V3 residuals with SE attention. ~1.09M params.
+    Changes:    Single seed (no multi-seed diversity); uniform mean ensemble
+                (no val-based weight grid search)
+    Result:     0.760 pub / 0.773 priv
+    Notes:      SE-V2 alone scored ~0.52 TTA-4 val AUC — failed to converge
+                entirely. Diversity across 4 architectures partially compensates
+                but private AUC is lower than ninth_attempt's 3-seed ensemble.
+                Uniform mean is optimal when model diversity is architectural;
+                val-based weight search overfits on 500 samples.
+
+--
+
+13. tenth_extension_attempt.ipynb  (Series M-ext)  — INFERENCE ONLY
+    Models:     3-model ensemble from tenth_attempt checkpoints: V2 + V3 + SE-V3
+                SE-V2 excluded (val AUC ~0.52 confirmed in tenth_attempt)
+    Result:     0.760 pub / 0.772 priv
+    Notes:      Essentially matches tenth_attempt. Removing the broken SE-V2
+                does not meaningfully change the ensemble score because its
+                contribution was already diluted by uniform mean averaging.
+
+--
+
+14. twelfth_attempt.ipynb  (Series N2)  — NOT SUBMITTED
+    Model:      Plain CustomNetV2, 3-seed (42, 123, 456) — same as ninth_attempt
+                but at 380px resolution (Rescale 416→RandomCrop 380) with
+                ±180° rotation augmentation
+    Result:     3-seed TTA-4 ensemble val AUC = 0.530  (not submitted)
+    Notes:      Confirmed poor convergence. Higher resolution + stronger rotation
+                appear to harm the small custom model. The 380px pipeline was
+                effective for fine-tuned backbones (pretrained on ImageNet at
+                high resolution) but this same configuration does not transfer
+                to training from scratch on 2000 images.
+
+
+===========================================================================
+FINAL CUSTOM VERSION: ninth_attempt.ipynb  (best by private AUC: 0.757 pub / 0.780 priv)
+===========================================================================
+
+Rationale for ninth_attempt as best:
+  Public AUC  (first 500 test images):  0.757
+  Private AUC (second 500 test images): 0.780
+  tenth_attempt private AUC is 0.773 — seventh's multi-seed approach
+  generalises better to unseen data than fourth architecture's single-seed ensemble.
+
+--- Architecture ---
+
+CustomNetV2 (plain, no SE, no residuals):
+  Block structure:  5 × [Conv2d(3×3, same-padding, bias=False) → BN → ReLU → MaxPool2d(2)]
+  Channel sizes:    3 → 32 → 64 → 128 → 256 → 256
+  Spatial path:     224 → 112 → 56 → 28 → 14 → 7
+  Head:             GlobalAveragePool → Flatten(256) → Dropout(0.2) → Linear(256,128)
+                    → ReLU → Dropout(0.4) → Linear(128,1)
+  Parameters:       ~1.01M  (no pretrained weights)
+
+--- Data Pipeline (224px) ---
+
+Training:
+  CropByEye(threshold=0.10, border=1)
+  → BenGraham(sigmaX=10)          [4*img − 4*GaussianBlur(img,10) + 128; uint8 guard + circular mask]
+  → Rescale(256)
+  → TVRandomHorizontalFlip(p=0.5)
+  → TVRandomVerticalFlip(p=0.5)   [(L-3) added to match TTA vflip pass]
+  → TVRandomRotation(15°)
+  → TVColorJitter(brightness=0.3, contrast=0.3, saturation=0.2, hue=0.05)
+  → RandomCrop(224)
+  → ToTensor → Normalize(mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225])
+
+Validation / Test:
+  CropByEye → BenGraham → Rescale(256) → CenterCrop(224) → ToTensor → Normalize
+
+--- Training Configuration ---
+
+Seeds:              42, 123, 456 (three independent runs of the same architecture)
+Optimizer:          AdamW(lr=1e-3, weight_decay=5e-3)
+Scheduler:          CosineAnnealingLR(T_max=50)
+Loss:               BCEWithLogitsLoss(pos_weight = n_neg/n_pos ≈ 2.7)
+Epochs:             50 max, patience=10 (early stopping on val AUC)
+Label smoothing:    0.0
+Batch sizes:        64 train / 256 val (num_workers=0, Windows)
+Sampler:            WeightedRandomSampler (inverse-frequency class weights)
+cudnn:              deterministic=True, benchmark=False
+
+--- Ensemble ---
+
+Method:   Uniform arithmetic mean of sigmoid outputs from the 3 trained models
+          (no val-based weight grid search — overfits on 500-sample val set;
+          equal weights are asymptotically optimal for same-architecture models)
+TTA:      4-pass — original + hflip + vflip + rot180; mean of sigmoid outputs
+          (rot90 TTA excluded — causes distribution shift; verified in K-1)
+Diversity source: stochastic weight initialisation, batch ordering, augmentation
+                  (not architectural — avoids overfitting on 2000 training images)
+
+--- Key Design Decisions (L-series changes) ---
+
+(L-1)  Revert to plain CustomNetV2 — SE blocks and residuals both regressed vs
+       plain V2. Root cause: added complexity overfits on 2000-image dataset.
+(L-2)  3-seed ensemble replaces 2-arch ensemble — more reliable diversity without
+       architectural complexity risk.
+(L-3)  TVRandomVerticalFlip added to training augmentation — aligns training
+       distribution with TTA-4 vflip pass, which was present at inference but
+       absent during training in earlier attempts.
+
+
+===========================================================================
+FAILED CUSTOM APPROACHES
+===========================================================================
+
+The following directions were explored and abandoned. Each entry explains
+what was tried, what happened, and the root cause where known.
+
+--- Architecture Complexity ---
+
+1. SE attention (SEBlock r=8) on all blocks — seventh_attempt, eighth_attempt, tenth_attempt
+   What:     Squeeze-and-Excitation blocks added after Conv-BN-ReLU in every
+             CustomNetV2 block. (~22k extra parameters)
+   Outcome:  Val AUC regressed vs plain V2. SE-V2 alone in tenth_attempt reached
+             only ~0.52 val AUC (effectively random).
+   Why it failed: Dataset too small (2000 images) to learn meaningful channel
+             attention. Extra parameters increase overfitting risk without
+             the benefit that comes from large-scale ImageNet pretraining.
+
+2. Residual connections (CustomNetV3) — eighth_attempt, tenth_attempt
+   What:     Each block replaced with ResBlock = Conv3×3→BN + 1×1-projection
+             skip → ReLU → MaxPool. Same parameter count as V2 (~1.05M).
+   Outcome:  Marginal improvement at best (+0.002 over V2 single seed).
+             Combined SE+residual (SECustomNetV3) in tenth_attempt brought
+             ensemble private AUC below ninth_attempt's pure V2 ensemble.
+   Why it failed: Skip connections are most useful for very deep networks where
+             gradient flow is a bottleneck. At 5 blocks, plain V2 already
+             trains without vanishing gradient issues.
+
+3. Partial SE (attempt_20) — SE on blocks 3–5 only (reduction=16)
+   What:     Applied SE attention only to the deeper layers, hoping to avoid
+             overfitting in early feature extractors.
+   Outcome:  ~0.72 val AUC — even worse than full SE blocks. Not submitted.
+   Why it failed: Inconsistency between early (plain) and late (SE) blocks does
+             not resolve the fundamental overfitting issue.
+
+--- Preprocessing Mistakes ---
+
+4. CLAHE preprocessing — attempt_with_a_b
+   What:     Contrast-limited adaptive histogram equalisation applied before
+             the standard pipeline.
+   Outcome:  0.544 pub (−0.022 regression from Series B baseline)
+   Why it failed: CLAHE alters the global intensity distribution. CropByEye
+             uses a fixed threshold (0.10) to detect the eye boundary from
+             raw pixel intensity. After CLAHE, background pixels may exceed
+             the threshold, corrupting the crop.
+
+5. BenGraham without uint8 guard — fourth_attempt (catastrophic)
+   What:     BenGraham formula applied directly to uint8 image arrays without
+             first casting to float.
+   Outcome:  0.541 pub — catastrophic collapse. Model trained on uniform gray images.
+   Why it failed: numpy clips uint8 arithmetic to [0,255]; operations like
+             4*img can silently overflow. Values collapse to {0,128}. The
+             resulting training images are near-uniform gray patches.
+
+--- Data Pipeline Modifications ---
+
+6. Pre-cached image pipeline — second_attempt_tuned_cache
+   What:     Images preprocessed and saved to disk at 224px; DataLoader reads
+             cached tensors directly, skipping online augmentation.
+   Outcome:  0.736 pub (−0.030 regression from tuned baseline)
+   Why it failed: Cache eliminates RandomCrop as a per-epoch augmentation.
+             On a 2000-image training set, spatial crop variation is the
+             primary source of regularisation. Without it the model overfits.
+
+7. rot90 variants in TTA (8-pass TTA) — seventh_attempt
+   What:     Extended TTA from 4 passes (orig+hflip+vflip+rot180) to 8 passes
+             by adding rot90 and rot270 variants.
+   Outcome:  AUC decreased for both custom and FT models.
+   Why it failed: Fundus images are radially symmetric but the BenGraham +
+             rectangular crop pipeline is not rotation-invariant at 90°.
+             rot90 images fall outside the training distribution, producing
+             miscalibrated predictions that reduce mean ensemble quality.
+
+8. Higher resolution for custom model — twelfth_attempt (N2-series)
+   What:     Exact ninth_attempt setup (3-seed CustomNetV2) but at 380px
+             (Rescale 416 → RandomCrop 380) with ±180° rotation augmentation.
+   Outcome:  3-seed TTA-4 val AUC = 0.530 — effectively random. Not submitted.
+   Why it failed: 380px quadruples spatial computation. The custom model's
+             5×MaxPool2d(2) path assumes 224px input (7×7 feature map before
+             GAP). At 380px the GAP aggregates over an 11×11 map — a different
+             receptive field regime. Additionally, ±180° rotation works for
+             pretrained backbones that are already robust to rotation (trained
+             on diverse ImageNet) but training from scratch at this difficulty
+             level with 2000 images causes the model to fail to converge.
+
+--- DenseNet Stage 3 Unfreeze (fine-tuning but relevant context) ---
+
+9. DenseNet Stage 3 (denseblock2+transition2) unfreeze — seventh_attempt
+   What:     Unfroze deeper DenseNet layers beyond Stage 2.
+   Outcome:  FT AUC regressed from 0.781 to 0.768.
+   Why it failed: Over-parameterises the fine-tuning with 2000 training images.
+             Stages 1+2 already achieve near-optimal AUC; Stage 3 simply overfits.
+
+
+===========================================================================
+SUMMARY TABLE (CUSTOM category, valid submissions only)
+===========================================================================
+
+Notebook                    | Pub AUC | Priv AUC | Key change
+----------------------------|---------|----------|----------------------------------
+first_attempt               |  0.570  |  0.597   | Baseline CustomNet
+attempt_with_b              |  0.558  |  0.566   | Adam+cosine (regression)
+attempt_with_a_b            |  0.544  |  0.562   | CLAHE (breaks CropByEye)
+attempt_with_c              |  0.561  |  0.579   | No custom change
+second_attempt              |  0.744  |  0.731   | CustomNetV2 + BenGraham
+second_attempt_tuned        |  0.766  |  0.743   | WeightedRandomSampler
+second_attempt_tuned_cache  |  0.736  |  0.730   | Cache kills RandomCrop
+third_attempt               |  0.762  |  0.742   | ResizedCrop + LS
+fourth_attempt              |  0.541  |  0.557   | BenGraham dtype bug (gray imgs)
+seventh_attempt             |  0.756  |  0.762   | SE-V2 2-seed
+eighth_attempt              |  0.756  |  0.764   | SE-V2 + V3 ensemble
+tenth_attempt               |  0.760  |  0.773   | 4-arch ensemble (V2+SE-V2+V3+SE-V3)
+tenth_extension_attempt     |  0.760  |  0.772   | 3-arch inference-only (SE-V2 dropped)
+*** ninth_attempt ***        |  0.757  |  0.780   | Plain V2 3-seed ensemble (BEST priv)

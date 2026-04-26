@@ -65,3 +65,7 @@ Scores:
 tenth_extension_attempt.ipynb: (custom only (ensemble with 3 archs), the ft is from tenth' cris's notebook attempt_24.ipynb)
 Scores:
 {'AUC_custom': 0.7601514477980288, 'AUC_ft': 0.83510891058755, 'AUC_custom_half': 0.7723880597014925, 'AUC_ft_half': 0.8260133757442297}
+
+twelfth_attempt.ipynb: (custom only , the ft is from tenth' cris's notebook attempt_24.ipynb)
+Scores:
+{ 3-seed ensemble val AUC (TTA-4): 0.5300}
