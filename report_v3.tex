@@ -1,0 +1,400 @@
+%% ──────────────────────────────────────────────────────────────────
+%%  Diabetic Retinopathy — Lab 5 Report (v3)
+%%  Computer Vision, April 2026
+%% ──────────────────────────────────────────────────────────────────
+\documentclass[a4paper, 10pt, twocolumn]{article}
+
+\usepackage[top=1.6cm, bottom=1.6cm, left=1.4cm, right=1.4cm, columnsep=0.65cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage[table]{xcolor}
+\usepackage{titlesec}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage[labelfont=bf, font=small, skip=3pt]{caption}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{graphicx}
+
+%% ── Colour palette ────────────────────────────────────────────────
+\definecolor{accent}{RGB}{0, 64, 128}
+\definecolor{rowbest}{RGB}{220, 240, 220}
+\definecolor{rowbad} {RGB}{255, 230, 230}
+\definecolor{rownorm}{RGB}{250, 250, 252}
+\definecolor{rulecolor}{RGB}{0, 64, 128}
+
+%% ── Section headings ─────────────────────────────────────────────
+\titleformat{\section}
+  {\normalfont\bfseries\small\color{accent}}
+  {}{0em}{}[{\color{rulecolor}\vspace{-1pt}\hrule height 0.6pt\vspace{1pt}}]
+\titlespacing{\section}{0pt}{4pt}{1pt}
+
+\titleformat{\subsection}
+  {\normalfont\small\bfseries}
+  {}{0em}{}
+\titlespacing{\subsection}{0pt}{2pt}{0pt}
+
+%% ── Paragraph / list style ───────────────────────────────────────
+\setlength{\parskip}{1pt}
+\setlength{\parindent}{0pt}
+\setlist[itemize]{topsep=0pt, itemsep=0pt, leftmargin=10pt,
+                  label=\raisebox{0.3ex}{\tiny$\bullet$}, parsep=0pt}
+
+%% ── Captions ─────────────────────────────────────────────────────
+\setlength{\abovecaptionskip}{3pt}
+\setlength{\belowcaptionskip}{0pt}
+
+%% ══════════════════════════════════════════════════════════════════
+\begin{document}
+
+%% ── Title spanning both columns ──────────────────────────────────
+\twocolumn[{%
+\begin{center}
+  {\large\bfseries\color{accent}
+    Automatic Diagnosis of Diabetic Retinopathy\\[2pt]
+    via Custom CNN Architecture and Transfer Learning}\\[3pt]
+  {\small
+    Maria Mu\~noz P\'erez \enspace$\cdot$\enspace
+    Cristina Sobrino Fern\'andez-Miranda\enspace$\cdot$\enspace
+    Computer Vision --- Lab 5 \enspace$\cdot$\enspace April 2026}\\[2pt]
+  {\color{rulecolor}\hrule height 0.8pt}
+  \vspace{4pt}
+\end{center}
+}]
+
+%% ── 1. INTRODUCTION & DATA ──────────────────────────────────────
+\section{Problem and Data}
+
+We address binary classification of Diabetic Retinopathy (DR/No-DR) from
+fundus photographs (2\,000 train / 500 val / 1\,000 test, 73\%/27\%
+class imbalance) under two competition tracks: a CNN trained from scratch
+(\textbf{CUSTOM}) and a fine-tuned ImageNet backbone (\textbf{FINE-TUNING}).
+Performance is measured by AUC on Codabench. Below we describe the
+\emph{final} solution submitted in each track; experiments that did not
+make it into the final pipeline are summarised in the ablation table on
+page\,2.
+
+\textbf{Shared preprocessing.} Right-eye images are horizontally mirrored
+to unify orientation. \texttt{CropByEye} segments the retinal disc by
+intensity threshold; Ben~Graham contrast normalisation~\cite{graham2015kaggle}
+($4{\times}\text{img}-4{\times}\text{GaussianBlur}+128$, with circular
+mask and a \texttt{uint8} dtype guard) enhances microaneurysms and vessel
+edges. ImageNet mean/std normalisation closes the pipeline.
+
+\textbf{Class imbalance.} Two complementary mechanisms are used together:
+\texttt{BCEWithLogitsLoss} with \texttt{pos\_weight}\,$\approx$\,2.76
+(gradient-level reweighting) and a \texttt{WeightedRandomSampler} with
+inverse-frequency weights (batch-level rebalancing).
+
+%% ── 2. CUSTOM MODEL ────────────────────────────────────────────
+\section{CUSTOM: 3-Seed CustomNetV2 Ensemble}
+
+\textbf{Architecture (CustomNetV2, $\sim$1\,M params).}
+Five convolutional blocks of \texttt{Conv2d(3$\times$3, same-pad, no bias)
+$\to$ BN $\to$ ReLU $\to$ MaxPool(2)} with channel progression
+$3{\to}32{\to}64{\to}128{\to}256{\to}256$. Spatial path
+$224{\to}112{\to}56{\to}28{\to}14{\to}7$. A \emph{Global Average Pooling}
+layer replaces the original flatten (translation invariance, far fewer
+parameters in the head), followed by
+\texttt{Dropout(0.2) $\to$ Linear(256,128) $\to$ ReLU $\to$ Dropout(0.4)
+$\to$ Linear(128,1)}.
+
+\textbf{Training pipeline (224\,px).}
+\texttt{CropByEye} $\to$ \texttt{BenGraham} $\to$ \texttt{Rescale(256)}
+$\to$ random h/v flip $\to$ rotation\,$\pm$15$^\circ$ $\to$ ColorJitter
+$\to$ \texttt{RandomCrop(224)} $\to$ \texttt{Normalize}. Validation/test
+use \texttt{CenterCrop(224)} only.
+
+\textbf{Optimisation.} \texttt{AdamW}~(lr=1e-3, wd=5e-3),
+\texttt{CosineAnnealingLR}($T_{\max}{=}50$), 50 epochs, patience\,=\,10
+on val AUC. Weighted sampler with \texttt{shuffle=False}.
+
+\textbf{Final model: 3-seed ensemble.} Three independent runs with seeds
+$\{42, 123, 456\}$ are uniformly averaged at inference. Diversity comes
+from random initialisation, batch ordering and augmentation rather than
+architectural complexity --- earlier attempts adding SE attention or
+residual connections (CustomNetV3, SECustomNetV3) all overfit on the
+2\,000-image set (Tab.\,\ref{tab:abl}). Each model is evaluated with
+\textbf{4-pass TTA} (original, hflip, vflip, rot180) before averaging.
+\textbf{Codabench: 0.757 pub / 0.780 priv.}
+
+%% ── 3. FINE-TUNING MODEL ───────────────────────────────────────
+\section{FINE-TUNING: 3-Backbone Weighted Ensemble at 380\,px}
+
+\textbf{Backbones.} Three ImageNet-pretrained backbones with complementary
+inductive biases are combined: \textbf{DenseNet121}~\cite{huang2017densely}
+(dense feature reuse), \textbf{DenseNet169} (deeper dense reuse) and
+\textbf{ResNeXt50-32x4d} (grouped convolutions). Each has a custom head
+\texttt{Dropout(0.5) $\to$ Linear($d$,1)} where $d$ is the backbone's
+feature dimension (1024 / 1664 / 2048).
+
+\textbf{Two-stage progressive unfreezing.} Each backbone is trained
+identically:
+\begin{itemize}
+  \item \emph{Stage 1.} Backbone frozen except for the deepest block + norm
+    (DenseNet: \texttt{denseblock4+norm5}; ResNeXt: \texttt{layer4})
+    plus the head. \texttt{AdamW} lr=3e-4, wd=1e-2,
+    \texttt{CosineAnnealingLR}($T_{\max}{=}30$), 30 epochs, patience=7,
+    label smoothing $\varepsilon{=}0.05$.
+  \item \emph{Stage 2.} Stage-1 weights loaded; one block deeper additionally
+    unfrozen (\texttt{denseblock3+transition3} or \texttt{layer3}).
+    Per-group LRs: backbone 3e-5, head 1e-4. \texttt{LinearLR} 3-epoch
+    warm-up (the warm-up prevents gradient spikes when freshly unfrozen,
+    unadapted layers first see the fine-tuning LR) then
+    \texttt{CosineAnnealingLR}($T_{\max}{=}12$), 15 epochs, patience=5.
+    A gate skips Stage\,2 if Stage\,1 + TTA val AUC $<$ 0.752, and the
+    Stage\,1 checkpoint is restored if Stage\,2 regresses.
+\end{itemize}
+
+\textbf{High-resolution pipeline (380\,px).} Microaneurysms (10--125\,$\mu$m)
+span $\sim$2\,px at 224\,px, below the reliable detection limit of a
+$3{\times}3$ filter; at 380\,px they reach 3--4\,px and are recoverable.
+This is the primary driver of sensitivity for early DR
+lesions~\cite{abramoff2018pivotal}. Pipeline: \texttt{CropByEye} $\to$
+\texttt{BenGraham} $\to$ \texttt{Rescale(416)} $\to$ random hflip $\to$
+\textbf{rotation\,$\pm$180$^\circ$} $\to$ ColorJitter $\to$
+\texttt{RandomCrop(380)} $\to$ \texttt{Normalize}. The full $\pm$180$^\circ$
+range is used because fundus cameras have no canonical orientation; the
+previous $\pm$15$^\circ$ window discarded $\sim$92\% of valid rotations,
+and full rotation is reported as the most impactful fundus
+augmentation~\cite{graham2015kaggle}. Backbones are fully convolutional
+(GAP head), so no architectural change is needed for the higher resolution;
+batch sizes drop to 32/128 to fit the GPU.
+
+\textbf{Inference \& ensemble.} Each backbone is scored with the same
+4-pass TTA. A grid search over all 2/3/4-backbone combinations and
+discrete weights $\{0.10,0.15,\dots,0.80\}$ on the 500-image val set
+selects:
+\[
+\text{DenseNet121}{\times}0.35 + \text{DenseNet169}{\times}0.15
+   + \text{ResNeXt50}{\times}0.50 .
+\]
+SE-ResNeXt50 (also trained) was \emph{discarded} by the search: weaker
+individually and positively correlated with ResNeXt50, it dilutes the
+blend. \textbf{Val AUC 0.867. Codabench: 0.835 pub / 0.826 priv.}
+
+%% ── 4. SUMMARY ─────────────────────────────────────────────────
+\section{Final Results}
+
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Track       & Public AUC & Private AUC \\
+\midrule
+CUSTOM (3-seed CustomNetV2) & 0.757 & \textbf{0.780} \\
+FINE-TUNING (3-backbone, 380\,px)   & \textbf{0.835} & \textbf{0.826} \\
+\bottomrule
+\end{tabular}
+
+
+%% ══════════════════════════════════════════════════════════════════
+%% PAGE 2 — ABLATIONS, NEGATIVE RESULTS & REFERENCES
+%% ══════════════════════════════════════════════════════════════════
+\newpage
+\onecolumn
+
+\section*{\color{accent}Page 2 --- Ablations, Negative Results and References}
+{\color{rulecolor}\hrule height 0.6pt}
+\vspace{4pt}
+
+%% ── ABLATIONS TABLE ──────────────────────────────────────────────
+\captionof{table}{Changes that were tried during development but did
+\emph{not} end up in the final solutions of either track. Each entry
+records the change, the observed effect, and why it was rejected.
+\textit{Cust} = CUSTOM track, \textit{FT} = FINE-TUNING track.}
+\label{tab:abl}
+\vspace{3pt}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.18}
+\begin{tabularx}{\textwidth}{@{}p{0.5cm} p{4.0cm} p{3.4cm} X@{}}
+\toprule
+\textbf{Track} & \textbf{Change tried} & \textbf{Effect observed} & \textbf{Why discarded} \\
+\midrule
+
+\multicolumn{4}{@{}l}{\textit{\color{accent}Preprocessing}} \\
+Both & CLAHE (LAB L-channel, clipLimit=2.0) before \texttt{CropByEye}
+     & Cust $-$0.022 pub; FT priv $-$0.017
+     & CLAHE alters the global intensity distribution; \texttt{CropByEye}'s
+       fixed threshold (0.10) then mis-segments the eye disc. Permanently banned. \\
+
+Both & BenGraham without \texttt{uint8} dtype guard
+     & Catastrophic: Cust 0.541, FT 0.558 (both near random)
+     & \texttt{np.clip(uint8,0,1)} collapsed every non-zero pixel to 1, so
+       $4{\cdot}\text{img}-4{\cdot}\text{blur}+128 \approx 128$ everywhere.
+       Models trained on uniform grey patches. Fixed by adding a dtype
+       guard and a circular background mask. \\
+
+Both & Pre-cached 224\,px tensors on disk (5$\times$ training speed-up)
+     & Cust $-$0.030 pub; FT $-$0.028 pub
+     & \texttt{CenterCrop} applied at cache-creation removes the per-epoch
+       \texttt{RandomCrop} jitter, the dominant spatial regulariser on a
+       2\,000-image set. Speed-up not worth the AUC loss. \\
+
+\addlinespace[2pt]
+\multicolumn{4}{@{}l}{\textit{\color{accent}Augmentation \& TTA}} \\
+Both & 8-pass TTA (added rot90 / rot270 to the 4-pass set)
+     & Both tracks regressed
+     & BenGraham + rectangular crop is not invariant under 90$^\circ$
+       rotation; rot90/rot270 images fall outside the training distribution
+       and miscalibrate the mean. \\
+
+FT   & 2-pass TTA (hflip only) instead of 4-pass
+     & Lower AUC than 4-pass
+     & vflip and rot180 add free inference-time diversity; the dataset has
+       no strong vertical anatomical prior. \\
+
+Cust & \texttt{TVRandomResizedCrop(scale 0.65--1.0)} replacing
+       \texttt{RandomCrop(224)}, plus label smoothing $\varepsilon{=}0.05$
+     & Marginal change vs.\ tuned baseline
+     & Reverted: harder to reason about train/eval crop mismatch with
+       fixed \texttt{CenterCrop}. Label smoothing kept only for FT,
+       where pretrained logits benefit more~\cite{muller2019label}. \\
+
+Cust & 380\,px input + $\pm$180$^\circ$ rotation on plain CustomNetV2
+       (the same recipe that helped FT)
+     & 3-seed val AUC = 0.530 (effectively random)
+     & The custom model's $5{\times}\text{MaxPool}$ path is calibrated for
+       a $7{\times}7$ feature map at 224\,px. At 380\,px GAP aggregates an
+       $11{\times}11$ map, a different receptive-field regime; without
+       ImageNet pretraining, training from scratch did not converge. \\
+
+\addlinespace[2pt]
+\multicolumn{4}{@{}l}{\textit{\color{accent}Custom architecture}} \\
+Cust & SE blocks (reduction=8) on every CustomNetV2 block
+     & SE-V2 alone reached only $\sim$0.52 val AUC; ensembles regressed
+     & $\sim$22\,k extra params introduce channel attention that overfits
+       on 2\,000 images without ImageNet-scale pretraining. \\
+
+Cust & Residual connections (CustomNetV3:
+       \texttt{Conv$\to$BN + 1$\times$1 skip $\to$ ReLU $\to$ Pool})
+     & At best $+$0.002 over plain V2; ensembles below 3-seed V2
+     & Skip connections matter when vanishing gradients are the bottleneck;
+       a 5-block net trains fine without them. \\
+
+Cust & Partial SE on blocks 3--5 only (reduction=16)
+     & Val AUC $\sim$0.72
+     & A late-stage-only attention does not resolve the underlying
+       overfitting on 2\,000 images. \\
+
+Cust & 4-architecture uniform-mean ensemble (V2 + SE-V2 + V3 + SE-V3, single seed)
+     & 0.760 pub / 0.773 priv
+     & Lower private than the plain-V2 3-seed ensemble (0.780). Architectural
+       diversity introduced unstable members (SE-V2 $\sim$0.52 val).
+       Stochastic-seed diversity proved more reliable. \\
+
+\addlinespace[2pt]
+\multicolumn{4}{@{}l}{\textit{\color{accent}Fine-tuning architecture \& training}} \\
+FT   & SGD\,+\,StepLR (EfficientNet-B0 baseline)
+     & Ceiling at 0.698 pub
+     & Adaptive optimisers with decoupled weight decay (AdamW) + smooth
+       cosine annealing transfer better on small medical-imaging datasets. \\
+
+FT   & EfficientNet-B0 with three top blocks unfrozen
+     & Best 0.770 pub / 0.744 priv (vs.\ DenseNet121 0.781/0.781 in
+       development); train-val gap 0.178
+     & Compound-scaled architecture overfits without large data;
+       DenseNet's dense feature reuse acts as implicit regularisation. \\
+
+FT   & DenseNet Stage\,3 unfreeze (\texttt{denseblock2 + transition2})
+     & FT $-$0.013 pub vs.\ two-stage
+     & Stages 1+2 already unfreeze $\sim$5.5\,M of 6.95\,M parameters;
+       Stage\,3 over-parameterises without adding capacity. \\
+
+FT   & EfficientNet-B4-NS (Noisy Student) as a 5th backbone at 380\,px
+     & CUDA OOM (14.56\,GiB GPU saturated at batch=16, even with grad. checkpointing)
+     & Hardware constraint, not a methodological one. Scientific motivation
+       valid (APTOS-2019 winners used B3--B7) but incompatible with this setup. \\
+
+FT   & SE-ResNeXt50 (timm) included in the final ensemble
+     & Dropped by val grid search; every 3-backbone blend including it scored
+       below the chosen DenseNet121 + DenseNet169 + ResNeXt50 blend
+     & Single-model val AUC (0.834) below ResNeXt50 (0.855), and predictions
+       are positively correlated with ResNeXt50 (same family) ---
+       weaker \emph{and} less complementary. \\
+
+\bottomrule
+\end{tabularx}
+
+\vspace{12pt}
+
+%% ── KEY VALID SUBMISSIONS (CONTEXT) ──────────────────────────────
+\captionof{table}{Key valid Codabench submissions illustrating the
+trajectory of the development. Final models highlighted in green.}
+\label{tab:traj}
+\vspace{3pt}
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.10}
+\begin{tabularx}{\textwidth}{@{}lXcc@{}}
+\toprule
+\textbf{Notebook} & \textbf{Key change} &
+  \textbf{Custom AUC} & \textbf{FT AUC} \\
+ & & \scriptsize pub\,/\,priv & \scriptsize pub\,/\,priv \\
+\midrule
+\texttt{first\_attempt}        & EfficientNet-B0 (SGD) + CustomNet baseline
+                                & 0.570\,/\,0.597 & 0.698\,/\,0.708 \\
+\texttt{attempt\_with\_c}      & FT: AdamW + CosineAnnealingLR
+                                & 0.561\,/\,0.579 & 0.751\,/\,0.734 \\
+\texttt{second\_attempt\_tuned}& CustomNetV2 + WeightedRandomSampler + 2-stage FT
+                                & 0.766\,/\,0.743 & 0.770\,/\,0.744 \\
+\texttt{fifth\_attempt}        & BenGraham fixed + 4-pass TTA + label smoothing
+                                & 0.770\,/\,0.770 & 0.757\,/\,0.755 \\
+\texttt{attempt\_22}           & FT: ResNet50 (IMAGENET1K\_V2) single model
+                                & 0.756\,/\,0.764 & 0.780\,/\,0.791 \\
+\texttt{attempt\_21}           & FT: 4-backbone ensemble at 224\,px
+                                & 0.757\,/\,0.780 & 0.806\,/\,0.807 \\
+\rowcolor{rowbest}
+\texttt{ninth\_attempt}        & \textbf{CUSTOM final} --- plain CustomNetV2, 3-seed ensemble
+                                & \textbf{0.757\,/\,0.780} & --- \\
+\rowcolor{rowbest}
+\texttt{attempt\_24}           & \textbf{FT final} --- 380\,px + $\pm$180$^\circ$ rotation, 3-backbone weighted ensemble
+                                & 0.760\,/\,0.773 & \textbf{0.835\,/\,0.826} \\
+\bottomrule
+\end{tabularx}
+
+\vspace{12pt}
+
+%% ── REFERENCES ───────────────────────────────────────────────────
+\renewcommand{\refname}{\normalfont\bfseries\small\color{accent}References}
+\begin{thebibliography}{9}
+\small\setlength{\itemsep}{1pt}
+
+\bibitem{graham2015kaggle}
+Graham, B.\,(2015).
+Kaggle diabetic retinopathy detection competition report.
+\textit{University of Warwick}.
+
+\bibitem{huang2017densely}
+Huang, G., Liu, Z., van der Maaten, L., \& Weinberger, K.\,Q.\,(2017).
+Densely connected convolutional networks.
+\textit{Proc.\ CVPR 2017}, 4700--4708.
+
+\bibitem{abramoff2018pivotal}
+Abramoff, M.\,D., et al.\,(2018).
+Pivotal trial of an autonomous AI-based diagnostic system for detection of
+diabetic retinopathy in primary care offices.
+\textit{npj Digital Medicine}, 1(1), 39.
+
+\bibitem{loshchilov2019adamw}
+Loshchilov, I., \& Hutter, F.\,(2019).
+Decoupled weight decay regularization.
+\textit{Proc.\ ICLR 2019}.
+
+\bibitem{muller2019label}
+M\"uller, R., Kornblith, S., \& Hinton, G.\,(2019).
+When does label smoothing help?
+\textit{Proc.\ NeurIPS 2019}, 4694--4703.
+
+\bibitem{xie2020se}
+Hu, J., Shen, L., \& Sun, G.\,(2018).
+Squeeze-and-excitation networks.
+\textit{Proc.\ CVPR 2018}, 7132--7141.
+
+\end{thebibliography}
+
+\end{document}
