@@ -153,38 +153,7 @@ preprocessing variant that was tried, including the dead ends listed above;
 │       ├── logs/                # score logs and run summaries the table above is drawn from
 │       └── starter/             # course-provided starter notebook the project began from
 ├── docs/
-│   └── history/                 # raw edit logs and course slides (git-ignored, kept locally only)
-├── data/                        # train/val/test CSVs + images (not committed, see below)
+│   └── history/edits/           # per-notebook change logs, numbered 01–13 in chronological order
+├── data/                        # train/val/test CSVs + images (not committed, course-provided dataset)
 └── CLAUDE.md                    # working notes for AI-assisted development on this repo
 ```
-
-## Running it
-
-Everything lives in `notebooks/final_notebook.ipynb`, which runs end-to-end:
-data loading → training (both tracks) → validation AUC → test scores →
-`codabench_submission.zip`.
-
-```bash
-jupyter nbconvert --to notebook --execute notebooks/final_notebook.ipynb \
-  --output final_notebook_out.ipynb
-```
-
-Expected data layout (paths are relative to `DATA_ROOT`, set near the top of
-the notebook):
-
-```
-data/
-  train.csv   # id, eye, label (2000 rows)
-  val.csv     # 500 rows
-  test.csv    # 1000 rows, label = -1
-  images/     # <id>.jpg, 3500 files
-```
-
-**Dependencies**: `torch`, `torchvision`, `timm`, `opencv-python`,
-`scikit-image`, `scikit-learn`, `pandas`, `numpy`, `pillow`, `matplotlib`.
-
-**Reproducibility**: seeds (42/123/456 for the custom ensemble) are fixed
-across `random`, `numpy`, and `torch` (including CUDA), with
-`cudnn.deterministic = True`. Note: `num_workers=0` is required in every
-`DataLoader` — a multiprocessing issue on Windows/WSL, where this was
-developed.
