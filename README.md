@@ -111,9 +111,6 @@ were too correlated with plain ResNeXt50 to add ensemble diversity.
 
 ### What didn't work
 
-Kept here because the debugging is arguably more informative than the final
-recipe:
-
 | Change tried | Why it was dropped |
 |---|---|
 | CLAHE before `CropByEye` | Alters global intensity so the fixed 0.10 threshold mis-segments the retinal disc. |
@@ -127,8 +124,7 @@ recipe:
 ### Iteration trail
 
 Notebooks in `notebooks/archive/` are numbered in the order they were run,
-each named after its one key change. **This is not the full 25-notebook
-sequence** — just the milestones that moved the score (public / private AUC):
+each named after its one key change. Important milestones that moved the score (public / private AUC):
 
 | Notebook | Key change | Custom AUC | FT AUC |
 |---|---|---|---|
