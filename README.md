@@ -127,8 +127,8 @@ recipe:
 ### Iteration trail
 
 Notebooks in `notebooks/archive/` are numbered in the order they were run,
-each named after its one key change. A condensed view of how the score moved
-(public / private AUC):
+each named after its one key change. **This is not the full 25-notebook
+sequence** — just the milestones that moved the score (public / private AUC):
 
 | Notebook | Key change | Custom AUC | FT AUC |
 |---|---|---|---|
