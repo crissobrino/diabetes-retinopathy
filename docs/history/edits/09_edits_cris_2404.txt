@@ -1,0 +1,8 @@
+Edits by Cris — 24/04
+=======================
+14_resnext50_inference_only.ipynb — SUBMITTED (FT category only)
+
+- Inference-only notebook, isolates the ResNeXt50-32x4d backbone from 13_multi_backbone_ft_ensemble_4way to measure its standalone contribution.
+- Loads best_resnext_s2.pth (Stage 2 checkpoint from 13). Head: Dropout(0.5) -> Linear(2048,1). 4-pass TTA.
+- Result: val AUC 0.8063, Codabench AUC 0.790 — beats the earlier single-DenseNet121 baseline (0.781) by itself.
+- Val/test gap (~1.6pp) is larger than the DenseNet121 baseline's (~0pp), suggesting mild overfitting or distribution shift specific to this backbone.

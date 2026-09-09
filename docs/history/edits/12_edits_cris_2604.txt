@@ -1,0 +1,9 @@
+Edits by Cris — 26/04
+=======================
+24_resnext50_5fold_cv_ensemble.ipynb and 25_resnext50_fold1_inference.ipynb — further FT experiment, not adopted
+
+- 24: 5-fold stratified CV on ResNeXt50 (train+val pooled, 2500 images), same two-stage unfreezing as 20_3backbone_weighted_ensemble_final_ft (380px, +/-180deg). Final prediction = average of the 5 fold models.
+- 24: extended TTA from 4-pass to 6-pass (added rot90/rot270) — 5 folds x 6 passes = 30 effective passes per test image.
+- 24: goal was to beat the 3-backbone ensemble's val AUC 0.867 using ResNeXt50 alone (its best single-model val AUC was 0.855 in 20_3backbone_weighted_ensemble_final_ft), via fold-ensembling variance reduction.
+- 25: inference-only spinoff, generates a submission from just the fold-1 checkpoint of 24.
+- Outcome: not carried into the final notebook — the 3-backbone weighted ensemble (20_3backbone_weighted_ensemble_final_ft) remained the better FT submission (val 0.867 vs this approach's untracked fold results).

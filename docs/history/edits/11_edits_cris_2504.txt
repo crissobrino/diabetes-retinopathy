@@ -1,0 +1,10 @@
+Edits by Cris — 25/04
+=======================
+20_3backbone_weighted_ensemble_final_ft.ipynb — SUBMITTED, final FT
+
+- Same 380px input / +/-180deg rotation as 18_efficientnetb4ns_5backbone_ensemble, minus EfficientNet-B4.
+- Loads the 4 backbone checkpoints trained in 18 (DenseNet121, DenseNet169, ResNeXt50, SE-ResNeXt50) — no retraining. Only CustomNetV2 trains from scratch here.
+- Reduced batch sizes (32 train / 128 val, from 64/256) for safe 380px memory use; FT models kept on CPU and moved to GPU one at a time.
+- Per-backbone val AUC (TTA-4, best stage): DenseNet121 0.833, DenseNet169 0.842, ResNeXt50 0.855 (best single model), SE-ResNeXt50 0.834.
+- Best ensemble via grid search: 0.35 x DenseNet121 + 0.15 x DenseNet169 + 0.50 x ResNeXt50 = val AUC 0.867. SE-ResNeXt50 excluded — every blend that included it scored lower.
+- Result: Codabench FT AUC 0.830 (val 0.867), vs 0.810 from 13_multi_backbone_ft_ensemble_4way. This is the FT pipeline used in the final notebook.

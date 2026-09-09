@@ -1,0 +1,13 @@
+Edits by Maria — 12/04
+=======================
+Covers: 09_bengraham_dtype_bug_FAILED, 10_bengraham_fixed_4pass_tta_INVALID
+
+- 09 added Ben Graham local contrast normalization (4*img - 4*GaussianBlur(img,sigma=10) + 128) after CropByEye, plus 4-pass TTA (orig/hflip/vflip/rot180) and label smoothing (EfficientNet only).
+- 09 bug: the dtype guard assumed float [0,1] input, but CropByEye returns uint8 [0,255]. `np.clip(uint8_img, 0, 1)` clamped every pixel to {0,1}, so every image was mapped to flat gray 128 after the Ben Graham formula.
+- 09 result: near-random on both tracks (custom 0.541/0.557, ft 0.558/0.533) — worse than the earlier CLAHE failure. No sanity check existed to catch it before training.
+- 10 fixed the bug: dtype guard now passes uint8 input straight through; added a circular background mask (radius 0.9*min(h,w)/2, gray-fill outside) to stop the contrast formula from amplifying border noise.
+- 10 added a sanity-check cell that asserts the normalized image mean isn't ~0.5 (would catch the 09 bug immediately).
+- 10 result: custom 0.770/0.770 (new best), ft 0.757/0.755 (down from 06's 0.770/0.744 on public, up on private).
+- Note: 4-pass TTA and label smoothing effects can't be isolated from the Ben Graham fix in this run — all three landed together. The large private-AUC jump on custom points to Ben Graham as the main driver.
+- Flagged INVALID later (see notebooks/archive/logs/scores.txt): the submitted custom CSV for 10 actually blended in pretrained EfficientNet-B0 scores, so the 0.770/0.770 custom result isn't a clean CustomNetV2-only number.
+

@@ -1,0 +1,7 @@
+Edits by Cris — 24/04
+=======================
+13_multi_backbone_ft_ensemble_4way.ipynb — SUBMITTED
+
+- Replaced single DenseNet121 with a 4-backbone FT ensemble, each fine-tuned with the same two-stage unfreezing strategy: DenseNet121 (1024-dim), DenseNet169 (1664-dim), ResNeXt50-32x4d (2048-dim), SE-ResNeXt50-32x4d via timm (2048-dim).
+- Ensemble weights tuned by grid search on the val set. CustomNetV2 (+SE) unchanged from 12_se_blocks_customnetv2.
+- Result: val AUC 0.819, Codabench FT AUC 0.810 (+0.029 vs the prior single-DenseNet121 run's 0.781).

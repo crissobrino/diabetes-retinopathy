@@ -1,99 +1,11 @@
-Edits and implementations by Maria - 10/04
-==========================================
+Edits by Maria — 10/04
+=======================
+Covers: 07_cached_images_ablation (discarded), 08_randomresizedcrop_label_smoothing
 
-----------------------------------------------------------------------
-7. second_attempt_tuned_cache.ipynb — Cache pipeline experiment (DISCARDED)
-----------------------------------------------------------------------
-Changes vs second_attempt_tuned:
-- Introduced CachedRetinopathyDataset class: loads pre-processed images from
-  cache_224/ directory as numpy .npy files instead of raw JPEGs
-- Cache creation pipeline: CropByEye -> Rescale(256) -> CenterCrop(224), saved
-  once per image as a (3, 224, 224) float array
-- Training augmentation at runtime: RandomHorizontalFlip + RandomRotation +
-  ColorJitter + Normalize (applied to already-cropped 224x224 tensors)
-- All other components identical to second_attempt_tuned: same architecture,
-  WeightedRandomSampler, AdamW + CosineAnnealingLR, TTA, ensemble logic,
-  hyperparameters
-
-Motivation: Cache creation was meant to remove the CropByEye+Rescale overhead
-from the training loop. Epoch time dropped from ~160s to ~28s (5x speedup),
-which would allow faster iteration and more experiments.
-
-Why it was discarded:
-- The cache applies CenterCrop(224) at creation time, so RandomCrop(224) is
-  never applied during training. This eliminates a key source of augmentation:
-  the standard pipeline samples a different 224x224 crop from a 256x256 image
-  at every epoch (32px of positional jitter in both axes per epoch).
-- On a 2000-image dataset, this per-epoch crop variation acts as an effective
-  regulariser. Removing it caused the models to converge faster to lower peaks:
-    EfficientNet S1 best val AUC: 0.748 (epoch 3) vs 0.779 (epoch 14) in tuned
-    CustomNetV2 best val AUC:     0.640 (epoch 4) vs 0.656 (epoch 15) in tuned
-- CropByEye is also applied only once per image in the cache; in the standard
-  pipeline it re-runs each epoch, providing slight variation in the crop boundary
-  depending on image loading state.
-- The 5x speed gain does not compensate for the consistent AUC drop across both
-  models. The cache approach should not be used unless RandomCrop is preserved
-  (e.g. cache at a larger size and crop at runtime).
-
-Results: custom AUC 0.736 / 0.730, ft AUC 0.742 / 0.728 (public / private)
-Regression of ~0.030 on ft and ~0.030 on custom vs second_attempt_tuned.
-
-
-----------------------------------------------------------------------
-8. third_attempt.ipynb — Experiments G-1, G-2, G-3: anti-overfitting
-----------------------------------------------------------------------
-Motivation from log analysis of second_attempt_tuned:
-- EfficientNet Stage 1 shows a train/val AUC gap of 0.178 at the best checkpoint
-  (epoch 14: train 0.957, val 0.779). The model is memorising the 2000 training
-  images. After epoch 14 train AUC keeps climbing to 0.980+ while val degrades.
-  Stage 2 barely improves (+0.002 TTA) because it inherits an already-overfit model.
-- CustomNetV2 best val was at epoch 15, patience=10 stopped at epoch 25. But with
-  CosineAnnealingLR(T_max=50), epoch 25 is the LR trough of the first cycle.
-  Epochs 22-25 all had near-zero LR, causing apparent stagnation. Early stopping
-  fired right before the LR would restart for a second cycle.
-
-Change G-1: TVRandomResizedCrop replaces Rescale(256) + RandomCrop(224)
-  New transform class (same numpy->PIL->torchvision->numpy pattern as TVCenterCrop):
-    TVRandomResizedCrop(size=224, scale=(0.65, 1.0), ratio=(0.9, 1.1))
-  Training pipeline becomes:
-    CropByEye(0.10,1) -> TVRandomResizedCrop(224) -> TVRandomHorizontalFlip
-    -> TVRandomRotation(15deg) -> TVColorJitter -> ToTensor -> Normalize
-  Val/test pipeline unchanged: CropByEye -> Rescale(256) -> CenterCrop(224)
-    -> ToTensor -> Normalize
-
-  Rationale: RandomResizedCrop combines scale jitter (crops 65-100% of the image
-  area) with spatial position jitter in a single operation. The previous pipeline
-  only provided spatial jitter (RandomCrop over 32px), so adding scale variation
-  increases the effective diversity of each training image per epoch. Scale
-  invariance is particularly useful for fundus images where the eye fills different
-  fractions of the frame depending on the camera and field of view.
-
-Change G-2: Label smoothing eps=0.05 for EfficientNet training only
-  Added label_smoothing=0.0 parameter to train_model(). When > 0 and phase='train',
-  targets are smoothed before the loss: labels_for_loss = labels * 0.95 + 0.025
-  This turns hard {0, 1} targets into soft {0.025, 0.975} targets.
-  Called as train_model(..., label_smoothing=0.05) for EfficientNet Stage 1 only.
-  CustomNetV2 keeps label_smoothing=0.0 (default, no change).
-
-  Rationale: With train AUC reaching 0.97 at the best checkpoint, the model is
-  producing very confident logits for training examples. Label smoothing prevents
-  the model from being penalised for any residual uncertainty on memorised examples,
-  acting as a soft regulariser without changing the architecture or learning rate.
-  eps=0.05 is conservative to avoid damaging the signal on a small dataset.
-  Not applied to CustomNetV2 because it is not overfitting (val AUC > train AUC
-  throughout training due to dropout and WeightedRandomSampler).
-
-Change G-3: CustomNetV2 CosineAnnealingLR T_max=50 -> T_max=25
-  scheduler_custom = lr_scheduler.CosineAnnealingLR(optimizer_custom, T_max=25)
-  num_epochs and patience unchanged (50 epochs, patience=10).
-
-  Rationale: With T_max=50, one cosine cycle spans the entire 50-epoch budget.
-  At epoch 25 (the midpoint) the LR reaches its minimum (~0). Patience=10 counted
-  10 epochs with near-zero LR and stopped at epoch 25, just before the LR would
-  restart. With T_max=25, two full cycles fit within the 50-epoch budget. Patience=10
-  now covers roughly 40% of a single cycle, so it is more likely to fire mid-cycle
-  (at a meaningful LR) rather than at the trough. If the model improves in the
-  second cycle, it will now be able to run it.
-
-Results: TBD (notebook not yet executed)
-Target: ft > 0.780 public, custom > 0.770 public
+- 07: cached CropByEye+Rescale+CenterCrop(224) to disk as .npy, 5x faster epochs (~160s -> ~28s).
+- 07 discarded: caching bakes in CenterCrop, so RandomCrop(224) — the main spatial regularizer on a 2000-image set — never runs. AUC dropped ~0.03 on both tracks (custom 0.736/0.730, ft 0.742/0.728) vs 06. Don't cache unless RandomCrop is preserved (e.g. cache larger, crop at runtime).
+- 08 motivation: EfficientNet Stage 1 showed a 0.178 train/val AUC gap at its best checkpoint (memorizing the 2000 images).
+- 08 change: TVRandomResizedCrop(224, scale=0.65-1.0) replaces Rescale(256)+RandomCrop(224) for training — adds scale jitter on top of position jitter.
+- 08 change: label smoothing eps=0.05 for EfficientNet only (CustomNetV2 wasn't overfitting, left unchanged).
+- 08 change: CustomNetV2 CosineAnnealingLR T_max 50->25, so two LR cycles fit in the 50-epoch budget instead of one (early stopping was firing right at the LR trough of a single 50-epoch cycle).
+- 08 not executed yet at time of writing; target ft > 0.780 public, custom > 0.770 public.

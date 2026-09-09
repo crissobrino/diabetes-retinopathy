@@ -1,98 +1,190 @@
-# Get started
+# Diabetic Retinopathy Detection from Fundus Images
 
-## Lab session description and database
+Binary classification of diabetic retinopathy (DR vs. No DR) from color fundus
+photographs, using two independent PyTorch pipelines: a convolutional network
+trained entirely from scratch, and an ensemble of ImageNet-pretrained
+backbones adapted via progressive fine-tuning. Built for a Kaggle-style
+image-classification competition (Codabench) as a 2-person team project for
+a Computer Vision graduate course.
 
-Diabetic Retinopathy (DR) is the leading cause of blindness in the working-age population of the developed world. World Health Organization estimates that 347 million people have the disease worldwide. Diabetic Retinopathy (DR) is an eye disease associated with long-standing diabetes. Around 40% to 45% of Americans with diabetes have some stage of the disease. Progression to vision impairment can be slowed or averted if DR is detected in time, however this can be difficult as the disease often shows few symptoms until it is too late to provide effective treatment.
+**Final results (ROC-AUC on held-out test set):**
 
-Our goal is to develop a CNN providing an automatic diagnosis of DR with color fundus photography as input. The need for a comprehensive and automated method of DR screening has long been recognized, and previous efforts have made good progress using image classification, pattern recognition, and machine learning.
+| Track | Public AUC | Private AUC |
+|---|---|---|
+| **Custom CNN** (from scratch) | 0.757 | 0.780 |
+| **Fine-tuned ensemble** | 0.835 | 0.826 |
 
-You are provided with a large set of high-resolution retina images taken under a variety of imaging conditions. Left and right fields can be provided indistinctively. Images are labeled with the following data:
+## Problem
 
-1.- An image id. 2.- An eye indicator (left,right) 3.- A label, indicating the presence of diabetic retinopathy in each image on a scale of 0 to 4, according to the following scale: 0 - No DR, 1 - Mild, 2 - Moderate, 3 - Severe, 4 - Proliferative DR
+Diabetic retinopathy is a leading cause of preventable blindness, and
+progression can be slowed if the disease is caught early — but screening at
+scale requires a lot of ophthalmologist time. The task here is to predict,
+from a single fundus photograph, whether a patient shows any sign of
+retinopathy.
 
-Figure 1 shows a visual example of a eye color fundus:
+- **Data**: 3,500 fundus images (2,000 train / 500 val / 1,000 test),
+  labeled 0–4 on the clinical DR severity scale and binarized to `DR` /
+  `No DR` (~27% positive). Left/right eye is recorded per image; right-eye
+  images are horizontally mirrored so orientation is consistent across the
+  dataset.
+- **Metric**: ROC-AUC (`sklearn.metrics.roc_auc_score`), which sidesteps
+  threshold selection and is robust to the class imbalance.
+- **Two independent submission tracks**:
+  - **CUSTOM** — a CNN architecture designed and trained from scratch, no
+    pretrained weights allowed.
+  - **FINE-TUNING** — any ImageNet-pretrained backbone, adapted to this task.
 
-Image of retina
+## Approach
 
-The dataset contains 3500 images divided into 3 sets:
+### Shared preprocessing
 
-Training set: 2000 images
-Validation set: 500 images
-Test set: 1000 images.
-Additionally, there is a csv file for each dataset (training, validation and test) in which each lines corresponds with a clinical case, defined with two fields separated by commas:
+```
+CropByEye → Ben Graham normalization → Rescale → augmentation → crop → Normalize(ImageNet stats)
+```
 
-the numerical id of the lesion: that allows to build the paths to the image.
-2.- An eye indicator (0-left eye and 1-right eye). It allows mirroring right-eye images so that both left and right eyes are comparable.
-the lesion label: available only for training and validation, being an integer between 0 and 4: 0 - No DR, 1 - Mild, 2 - Moderate, 3 - Severe, 4 - Proliferative DR. In the case of the test set, labels are not available (their value is -1).
-For simplicity, we will transform the original labels to produce a binary label: 0 - No DR, 1 - DR. Therefore we tackle a binary classification problem.
+- **`CropByEye`** — intensity-threshold segmentation that crops each image
+  down to the retinal disc, removing the black background border.
+- **Ben Graham normalization** (`4×img − 4×GaussianBlur(img) + 128`, circular
+  mask) — a local contrast-enhancement formula from the original Kaggle DR
+  competition that makes microaneurysms and vessel edges much more visible.
+  Must run on `uint8` input; see [What didn't work](#what-didnt-work) for why.
+- **Class imbalance** is handled two ways at once: `BCEWithLogitsLoss` with
+  `pos_weight ≈ 2.76` (loss-level reweighting) and a `WeightedRandomSampler`
+  with inverse class-frequency weights (batch-level rebalancing).
 
-Students will be able to use the training and validation sets to build their solutions and finally provide the scores associated with the test set.
+### Track 1 — Custom CNN (`CustomNetV2`)
 
-## Design and implementation of the diagnosis system
+A compact 5-block CNN, kept deliberately small to avoid overfitting a
+2,000-image training set with no pretrained prior:
 
-This practice provides guidelines to build a baseline reference system. To do so, we will learn two fundamental procedures:
+```
+[Conv3x3(same, no bias) → BatchNorm → ReLU → MaxPool2] × 5   (channels: 3→32→64→128→256→256)
+→ Global Average Pooling
+→ Dropout(0.2) → Linear(256, 128) → Dropout(0.4) → Linear(128, 1)
+```
 
-Process your own database with PyTorch
-Design a feedforward CNN that processess images and provides a diagnostic
-Use a regular network that has been pretrained using a large-scale general purpose dataset and fine-tune it for our diagnostic problem
+~1.0M parameters. Trained with AdamW (`lr=1e-3`, `wd=5e-3`),
+`CosineAnnealingLR(T_max=50)`, up to 50 epochs with early stopping
+(patience 10). Augmentation at 224px: random flips, ±15° rotation, color
+jitter, random crop.
 
-## Evaluation Metric: AUC
+**Final submission**: 3 independent runs (seeds 42, 123, 456), each scored
+with 4-pass test-time augmentation (original + h-flip + v-flip + rot180),
+then uniformly averaged. Independent weight initialization gives enough
+diversity for the ensemble to help; a fixed uniform average was used instead
+of tuning per-model weights, to avoid overfitting the 500-image validation
+set.
 
-We will use the area under the ROC or AUC (https://en.wikipedia.org/wiki/Receiver_operating_characteristic#Area_under_the_curve).
+### Track 2 — Fine-tuned backbone ensemble
 
-AUC is a metric that avoids setting a specific threshold to make detections and is applied over the soft outputs of a binary classifier. By modifying the value of the threshold, we can build a ROC curve setting the False Positive Rate (FPR) in the y-axis and the True Positive Rate (TPR) in the x-axis. TPR is the proportion of positive cases than have been succesfully detected, whereas FPR is the number of false detections divided by the number of negatives.
+Three ImageNet-pretrained backbones, chosen for complementary inductive
+biases, each fine-tuned independently and then blended:
 
-For low detection thresholds and an imperfect system, TPR will be high at the expense of a high FPR (as the system always says 1). For high threholds, the opposite situation happens. Once the ROC is built, the AUC measures the integral behind the curve, which is in the range [0,1].
+| Backbone | Idea |
+|---|---|
+| DenseNet-121 | dense feature reuse across layers |
+| DenseNet-169 | deeper dense reuse |
+| ResNeXt-50 (32×4d) | grouped ("cardinality") convolutions |
 
-Although, at least theoretically, AUC can be lower than 0.5, in partice, the output of a baseline system that randomly decides 0 or 1 with equal probability obtains an AUC=0.5, so lower values are usually caused by bugs in the code (and could be avoided just by inverting the outputs of the system).
+Each backbone gets the same head: `Dropout(0.5) → Linear(features, 1)`.
 
-As we have mentioned, AUC is a metric to evaluate binary problems (labels 0,1), and has the advantage of being independent of the detection threshold. It also behaves well against unbalanced problems, as it evaluates the ranking of the scores (their order with respect to the labels) and not their absolute values.
+**Two-stage progressive unfreezing**, per backbone:
+- *Stage 1* — freeze everything except the classification head and the
+  deepest block. AdamW `lr=3e-4`, 30 epochs, label smoothing `ε=0.05`.
+- *Stage 2* — unfreeze one more block, drop the backbone LR to `3e-5`
+  (head: `1e-4`), 3-epoch linear warmup then cosine decay. Gated behind a
+  validation check (only runs if Stage 1 val AUC ≥ 0.752) and rolled back if
+  it regresses relative to Stage 1.
 
-Since our problem is binary (DR vs no DR), we will use AUC to assess the performance, with the following method from scikit-learn:
+Inputs are processed at higher resolution (`Rescale(416) → RandomCrop(380)`)
+with a wide `±180°` rotation range — fundus images have no canonical
+orientation, and early lesions (microaneurysms) are small enough that they
+benefit from the extra resolution. All three backbones are fully
+convolutional (GAP-based heads), so no architecture change was needed to
+raise the input resolution.
 
-auc = metrics.roc_auc_score(labels, scores)
+**Final submission**: 4-pass TTA per backbone, then a validation-set grid
+search over blend weights. Best found:
+`0.35 × DenseNet121 + 0.15 × DenseNet169 + 0.50 × ResNeXt50` (val AUC 0.867).
+A fourth backbone (SE-ResNeXt50) was trained but excluded — its predictions
+were too correlated with plain ResNeXt50 to add ensemble diversity.
 
-## Terms
+### What didn't work
 
-1. Evaluation criteria
+Kept here because the debugging is arguably more informative than the final
+recipe:
 
-The evaluation of this practice will be done through a challenge, for which the students will have to send the results based on the test data in two categories:
+| Change tried | Why it was dropped |
+|---|---|
+| CLAHE before `CropByEye` | Alters global intensity so the fixed 0.10 threshold mis-segments the retinal disc. |
+| Ben Graham without a `uint8` dtype guard | Silent numpy integer overflow collapsed images to `{0, 128}` — a near-uniform gray square. Tanked both tracks (custom 0.541, FT 0.558) until traced back to the dtype. |
+| Pre-caching images at 224px on disk (5× training speedup) | Removes the per-epoch `RandomCrop` jitter, which turned out to be the main spatial regularizer on a dataset this small (−0.028 AUC). |
+| SE blocks + residual connections on the custom CNN | Extra capacity overfits with no pretrained prior — SE alone dropped to 0.52 val AUC. |
+| 380px input / ±180° rotation on the *custom* CNN | The custom architecture's pooling stack is tuned for a 224px input; at 380px, training from scratch failed to converge (0.53 val AUC). Aggressive augmentation only paid off on the pretrained backbones. |
+| 8-pass TTA (adding rot90/rot270) | Ben Graham's circular mask + rectangular crops are not invariant to 90° rotation, so those extra views fell outside the training distribution and hurt both tracks. |
+| Unfreezing a 3rd DenseNet block (Stage 3) | Over-parameterized for 2,000 training images (−0.013 FT AUC vs. stopping at two stages). |
 
-CUSTOM Category: The results on the test set of a custom network, created from scratch by the students. In this case, the complete code of the network must appear in cells of the notebook and it will not be possible to make use of external networks/packages or pre-trained models.
-FINE-TUNING Category: The results on the test set of a network that has been previously initialized in another database (with fine-tuning). In this case, existing models in torchvision or even external networks can be used.
-In addition, the final mark will depend both on the results in both categories and on the content of a brief report (1 side for the description, 1 side for extra material: tables, figures and references) where they will describe the most important aspects of the proposed solutions. The objective of this report is for the teacher to assess the developments/extensions/decisions made by the students when optimizing their system. You do not need to provide an absolute level of detail about the changes made, just list them and briefly discuss the purpose of the changes.
+### Iteration trail
 
-Rules for the Codabench challenge
+Notebooks in `notebooks/archive/` are numbered in the order they were run,
+each named after its one key change. A condensed view of how the score moved
+(public / private AUC):
 
-To participate in the challenge, the following instructions and rules must be taken into account:
+| Notebook | Key change | Custom AUC | FT AUC |
+|---|---|---|---|
+| `01_baseline_customnet_efficientnetb0` | CustomNet baseline + EfficientNet-B0 (SGD + StepLR) | 0.570 / 0.597 | 0.698 / 0.708 |
+| `06_customnetv2_bengraham_weightedsampler_tta` | CustomNetV2 + Ben Graham + WeightedRandomSampler + 4-pass TTA | 0.766 / 0.743 | 0.770 / 0.744 |
+| `17_se_v2_v3_ensemble_4pass_tta` | Custom: SE-ensemble; FT: ResNet50 two-stage unfreezing | 0.756 / 0.764 | 0.780 / 0.791 |
+| `19_customnetv2_3seed_ensemble_final_custom` | **Final CUSTOM** — 3-seed `CustomNetV2` ensemble | **0.757 / 0.780** | — |
+| `20_3backbone_weighted_ensemble_final_ft` → `final_notebook` | **Final FT** — validation-grid 3-backbone weighted ensemble, 380px | — | **0.835 / 0.826** |
 
-Timeline: The challenge will take place between Wednesday, March 25, and Tuesday, April 21. Consequently, no solution uploads will be permitted outside of this date range.
+The full numbered sequence (01–25) covers every architecture and
+preprocessing variant that was tried, including the dead ends listed above;
+`notebooks/archive/logs/` has the raw per-notebook score dumps
+(`scores.txt`) these numbers are drawn from.
 
-Submission Limit: During the challenge, participants are allowed to upload four solution files per day, corresponding to different system implementations.
+## Repo structure
 
-Code Verification: Project code will be reviewed to verify the authenticity of the results obtained during the challenge. If the results cannot be reproduced using the submitted system, the team will be disqualified from the competition and will not receive the corresponding points toward the final project grade.
+```
+.
+├── notebooks/
+│   ├── final_notebook.ipynb   # canonical, self-contained: data → both training pipelines → val AUC → submission
+│   └── archive/                # iteration history, numbered 01–25 in run order, one key change each
+│       ├── logs/                # score logs and run summaries the table above is drawn from
+│       └── starter/             # course-provided starter notebook the project began from
+├── docs/
+│   └── history/                 # raw edit logs and course slides (git-ignored, kept locally only)
+├── data/                        # train/val/test CSVs + images (not committed, see below)
+└── CLAUDE.md                    # working notes for AI-assisted development on this repo
+```
 
-Project evaluation
+## Running it
 
-The evaluation of this assignment, over 10 points, is structured as follows:
+Everything lives in `notebooks/final_notebook.ipynb`, which runs end-to-end:
+data loading → training (both tracks) → validation AUC → test scores →
+`codabench_submission.zip`.
 
-4 points: Technical content of the report.
+```bash
+jupyter nbconvert --to notebook --execute notebooks/final_notebook.ipynb \
+  --output final_notebook_out.ipynb
+```
 
-4 points: Competition results on Codabench. The score will be determined via linear regression based on the best and worst results obtained in the competition.
+Expected data layout (paths are relative to `DATA_ROOT`, set near the top of
+the notebook):
 
-2 points: Quality of the submitted Python code.
+```
+data/
+  train.csv   # id, eye, label (2000 rows)
+  val.csv     # 500 rows
+  test.csv    # 1000 rows, label = -1
+  images/     # <id>.jpg, 3500 files
+```
 
-2. Submission details for evaluation
+**Dependencies**: `torch`, `torchvision`, `timm`, `opencv-python`,
+`scikit-image`, `scikit-learn`, `pandas`, `numpy`, `pillow`, `matplotlib`.
 
-Model Outputs: The .csv files containing the test outputs for the models trained in both categories must be uploaded via the Codabench platform throughout the competition (maximum of 2 submissions per day, 100 total submissions).Each file will contain a matrix of size 1000x1, with the DR score for each of the 1000 images in the test dataset. The array should be provided in text format (with 1 number per row). The reference notebook provides the code to generate these outputs.
-Additionally, each group must upload a ZIP file to Aula Global containing:
-
-Two .csv files with the test outputs of the models trained in the two categories. Each file will contain a matrix of size 1000x1, with the DR score for each of the 1000 images in the test dataset. The array should be provided in text format (with 1 number per row). Code to generate the outputs is provided later.
-
-The report as described above.
-
-The notebook that integrates the creation of both models so that the teacher can check how things have been implemented.
-
-IMPORTANT: It is mandatory for each group member to focus on specific improvements or experiments. Furthermore, the report must clearly indicate the contributions of each member so that individual work can be assessed.
-
-The project submission deadline is Tuesday, April 21, at 11:59 PM.
+**Reproducibility**: seeds (42/123/456 for the custom ensemble) are fixed
+across `random`, `numpy`, and `torch` (including CUDA), with
+`cudnn.deterministic = True`. Note: `num_workers=0` is required in every
+`DataLoader` — a multiprocessing issue on Windows/WSL, where this was
+developed.

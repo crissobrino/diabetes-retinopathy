@@ -1,0 +1,12 @@
+Edits by Cris — 06/04
+=======================
+Early exploratory session, before the numbered notebook sequence existed. Superseded by
+later work (CustomNetV2 replaced ImprovedCustomNet, Ben Graham preprocessing replaced this
+caching approach) — kept only for the record, nothing here survived into the final pipeline.
+
+- Built a one-time preprocessing cache (CropByEye + Rescale + CenterCrop -> .npy files) because per-epoch CropByEye was making training too slow (57s per 4 batches). Gave a 12x speedup.
+- Tried EfficientNet-B3 (up from ResNet18) with 3 unfreezing configurations: blocks 6-8 unfrozen overfit (val AUC 0.748, train 0.89), block 8 only underfit (val AUC 0.707), blocks 7-8 was the best balance (val AUC 0.751).
+- Built "ImprovedCustomNet": a ResNet-style network with residual blocks (stem + 4 stages of 2 residual blocks each, GAP head, ~1.7M params) to replace the flat-FC CustomNet baseline (0.60 AUC).
+- ImprovedCustomNet showed val AUC consistently above train AUC (a sign something was off, not genuine generalization) across 27 epochs; lowering lr/dropout didn't fix it, shrinking the network didn't fully fix it either.
+- Root cause identified but not yet fixed this session: the training augmentation (RandomVerticalFlip + RandomRotation(15) + ColorJitter on every image) was too aggressive for a randomly-initialized small network — it needed a much gentler pipeline (e.g. horizontal flip only) since it can't lean on pretrained features the way EfficientNet can.
+- Session results: Model 1 (ImprovedCustomNet) val AUC 0.643, Codabench 0.55. Model 2 (EfficientNet-B3, blocks 7-8) val AUC 0.751, Codabench 0.69.

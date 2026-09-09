@@ -1,0 +1,9 @@
+Edits by Cris — 24/04
+=======================
+18_efficientnetb4ns_5backbone_ensemble.ipynb — NOT SUBMITTED (OOM)
+
+- Attempted to add EfficientNet-B4 (Noisy Student weights, timm) as a 5th FT backbone, 1792-dim head.
+- Also raised input resolution to 380px (Rescale 416 -> RandomCrop/CenterCrop 380, up from 256/224) and widened rotation augmentation from +/-15deg to +/-180deg, for all backbones — fundus images have no canonical orientation and microaneurysms need the extra resolution to be visible.
+- The 4 existing backbones (DenseNet121, DenseNet169, ResNeXt50, SE-ResNeXt50) retrained fine at 380px/+/-180deg.
+- EfficientNet-B4 caused a CUDA OOM at 380px even at batch=16, on a fresh kernel; gradient checkpointing and smaller batches didn't fix it. Dropped the B4 backbone.
+- 380px + +/-180deg augmentation changes carried forward into 20_3backbone_weighted_ensemble_final_ft (not resubmitted from this notebook).

@@ -5,4 +5,4 @@ train.csv
 val.csv
 .claude/
 cache_224/
-class_ppts/
+docs/history/slides/

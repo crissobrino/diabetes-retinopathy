@@ -1,0 +1,19 @@
+Edits by Maria — 26/04
+=======================
+Custom-track notebooks only (CUSTOM category, no pretrained weights). FT numbers below
+came from Cris's parallel notebooks, referenced by their new filenames.
+
+- 15 (SE-CustomNetV2, 2-seed): added Squeeze-and-Excitation blocks after every conv block, trained seeds 42+123, uniform mean. Also tried 8-pass TTA (adds rot90) — hurt both tracks, reverted to 4-pass. Result: custom 0.756/0.762.
+- 17 (SE-V2 + new CustomNetV3 ensemble): CustomNetV3 adds residual skip connections (same channel progression as V2, ~1.05M params). Uniform mean of SE-V2 + V3. FT side used Cris's 16_resnet50_backbone_experiment. Result: custom 0.756/0.764, ft 0.780/0.791.
+- 19 (plain CustomNetV2, 3-seed: 42/123/456): dropped attention/skip variants, went back to plain V2 but ensembled 3 seeds. Added vertical flip to training augmentation to match the TTA vflip pass. FT side used Cris's 18_efficientnetb4ns_5backbone_ensemble. Result: custom 0.757/0.780 — best valid custom result, ft 0.806/0.807.
+- 21 (4-architecture ensemble, single seed): V2 + SE-V2 + V3 + new SECustomNetV3 (skip + SE attention, ~1.09M params). SE-V2 alone failed to converge in this run (val AUC 0.524, near-random), dragging the 4-model mean down. FT side used Cris's 20_3backbone_weighted_ensemble_final_ft (best FT overall). Result: custom 0.760/0.773, ft 0.835/0.826.
+- 22 (extension of 21, inference-only): dropped the failed SE-V2, kept V2+V3+SECustomNetV3 (checkpoints reused from 21, no retraining). Did not improve over 21 (0.760/0.773 either way).
+- 23 (380px + +/-180 deg rotation on CustomNetV2, not run to completion): mirrors the resolution/rotation change that took Cris's FT AUC from 0.806 to 0.835, applied to the custom model instead. Base: 19 (3-seed V2). Same seeds/optimizer/schedule, just Rescale 256->416, crop 224->380, rotation 15->180deg, batch 64->32.
+
+Summary (public/private AUC):
+  15  0.756/0.762  custom  |  0.768/0.754  ft
+  17  0.756/0.764  custom  |  0.780/0.791  ft
+  19  0.757/0.780  custom (best valid)  |  0.806/0.807  ft
+  21  0.760/0.773  custom  |  0.835/0.826  ft (best ft overall)
+  22  0.760/0.772  custom (no gain)     |  0.835/0.826  ft
+  23  not completed — see notebooks/archive/23_customnet_380px_180deg_rotation_FAILED.ipynb (it failed: 3-seed val AUC 0.53, custom architecture doesn't converge at 380px)

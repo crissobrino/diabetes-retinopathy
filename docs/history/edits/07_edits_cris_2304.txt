@@ -1,0 +1,8 @@
+Edits by Cris — 23/04
+=======================
+12_se_blocks_customnetv2.ipynb — NOT SUBMITTED, below baseline
+
+- Added SE (Squeeze-and-Excitation) blocks to CustomNetV2 blocks 3-5 (128/256/256 channels), reduction=16. Blocks 1-2 left unchanged.
+- FT side (DenseNet121) unchanged from 11_densenet121_finetuning_INVALID.
+- Result: val AUC custom 0.72, vs 0.786 in the prior run — regression, likely overfitting (2000 images is too small to learn useful channel attention weights).
+- Decision: SE-CustomNetV2 not submitted. Moved on to exploring FT backbones instead of iterating further on the custom architecture.
